@@ -7,8 +7,11 @@
 - GCP Cloud Run
 - GCP Datastore
 
-# TEST
-
+# Automation
+## Protoc
+```
+.github/workflows/automation_proto_go.yml
+```
 
 ### Example for fiber as a client to gRPC server.
 

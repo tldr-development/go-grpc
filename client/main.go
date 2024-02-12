@@ -78,5 +78,30 @@ func main() {
 		})
 
 	})
-	log.Fatal(app.Listen(":3000"))
+
+	app.Get("/datastore/:a/:b", func(c *fiber.Ctx) error {
+		a, err := strconv.ParseUint(c.Params("a"), 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid argument A",
+			})
+		}
+		b, err := strconv.ParseUint(c.Params("b"), 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid argument B",
+			})
+		}
+		req := &proto.Request{A: int64(a), B: int64(b)}
+		if res, err := client.DataStore(context.Background(), req); err == nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"result": fmt.Sprint(res.Result),
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	})
+
+	log.Fatal(app.Listen(":3001"))
 }
