@@ -28,4 +28,4 @@ jobs:
       - name: Generate Protobufs
         run: |
           go mod download
-          find . -name '*.proto' -exec protoc --go_out=. {} \;
+          find . -name '*.proto' -exec protoc --go_out=. --go_opt=paths=source_relative {} \;
