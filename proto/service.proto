@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/hojin-kr/proto";
+option go_package = "proto;service";
 
 message Request {
     int64 a = 1;
