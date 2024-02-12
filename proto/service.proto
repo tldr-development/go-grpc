@@ -13,9 +13,19 @@ message Response {
     int64 result = 1;
 }
 
+message RequestFile {
+    string filename = 1;
+    bytes data = 2;
+}
+
+message ResponseFile {
+    string filename = 1;
+    string url = 2;
+}
+
 service AddService {
     rpc Add(Request) returns (Response);
     rpc Multiply(Request) returns (Response);
     rpc DataStore(Request) returns (Response);
-    rpc CloudStorage(Request) returns (Response);
+    rpc CloudStorage(RequestFile) returns (ResponseFile);
 }
