@@ -6,7 +6,7 @@ import (
 
 	"fmt"
 
-	"github.com/gofiber/recipes/fiber-grpc/proto"
+	"github.com/hojin-kr/fiber-grpc/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

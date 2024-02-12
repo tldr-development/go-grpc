@@ -1,0 +1,47 @@
+name: Proto Generation Swift
+
+on:
+  push:
+    paths:
+      - '**.proto'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Swift
+      uses: actions/setup-swift@v1
+      with:
+        swift-version: 5.5  # Adjust the Swift version as needed
+
+    - name: Install protoc
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+
+    - name: Install protoc-gen-swift
+      run: |
+        git clone
+
+    - name: Generate Swift code from proto files
+      run: |
+        swift package update
+        find . -name '*.proto' -exec protoc --swift_out=. --swift_opt=Visibility=Public --swift_opt=FileNaming=DropPath {} \;
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add .
+        git commit -m "Auto-generate Swift code from proto files" || echo "No changes to commit"
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        branch: main  # Adjust the branch as needed
+        github_token: ${{ secrets.GITHUB_TOKEN }}
