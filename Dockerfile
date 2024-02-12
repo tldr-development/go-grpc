@@ -1,10 +1,10 @@
-FROM golang:1.18.10 as build-go
+FROM golang:1.19 as build-go
 WORKDIR /app
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/app .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/app /app/server
 
 FROM alpine:latest
 RUN addgroup -S app && adduser -S app -G app

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net"
 
+	"fmt"
+
 	"github.com/gofiber/recipes/fiber-grpc/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -16,6 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Server is running on port :4040")
 	srv := grpc.NewServer()
 	proto.RegisterAddServiceServer(srv, &server{})
 	reflection.Register(srv)
