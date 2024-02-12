@@ -17,4 +17,5 @@ service AddService {
     rpc Add(Request) returns (Response);
     rpc Multiply(Request) returns (Response);
     rpc Test(Request) returns (Response);
+    rpc Test2(Request) returns (Response);
 }
