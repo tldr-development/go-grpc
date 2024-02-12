@@ -4,7 +4,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/app /app/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/app /app/sample-server
 
 FROM alpine:latest
 RUN addgroup -S app && adduser -S app -G app
