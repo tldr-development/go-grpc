@@ -103,5 +103,21 @@ func main() {
 		})
 	})
 
+	app.Get("/signedurl", func(c *fiber.Ctx) error {
+		req := &proto.RequestSignedURL{
+			Filename:    "test",
+			ContentType: "test",
+			Size:        100,
+		}
+		if res, err := client.CloudStorage(context.Background(), req); err == nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"result": fmt.Sprint(res.Url),
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	})
+
 	log.Fatal(app.Listen(":3001"))
 }

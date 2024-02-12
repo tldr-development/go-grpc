@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"strconv"
 
+	"github.com/hojin-kr/fiber-grpc/gcp_cloudstorage"
 	"github.com/hojin-kr/fiber-grpc/gcp_datastore"
 	"github.com/hojin-kr/fiber-grpc/proto"
 	"google.golang.org/grpc"
@@ -68,4 +70,20 @@ func (s *server) DataStore(_ context.Context, request *proto.Request) (*proto.Re
 	result := completeKey.ID
 
 	return &proto.Response{Result: result}, nil
+}
+
+// get cloud storage signedURL
+func (s *server) CloudStorage(_ context.Context, requset *proto.RequestSignedURL) (*proto.ResponseSignedURL, error) {
+	if env != "live" {
+		log.Printf("cloud storage rcp")
+	}
+	bucket := "etcd-389303-test"
+	object := "test"
+	// generateV45GetObjectSignedURL
+	url, err := gcp_cloudstorage.GenerateV4GetObjectSignedURL(os.Stdout, bucket, object)
+	if err != nil {
+		fmt.Println("Error generating signed URL:", err)
+	}
+
+	return &proto.ResponseSignedURL{Url: url}, nil
 }
