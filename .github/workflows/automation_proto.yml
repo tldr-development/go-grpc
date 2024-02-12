@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '**.proto'
+  workflow_dispatch:
 
 jobs:
   generate:
@@ -32,12 +33,24 @@ jobs:
         go mod download
         find . -name '*.proto' -exec protoc --go_out=. --go_opt=paths=source_relative {} \;
 
+    - name: Install Swift Protobuf Plugin
+      run: |
+        git clone https://github.com/apple/swift-protobuf.git
+        cd swift-protobuf
+        swift build -c release
+        cp .build/release/protoc-gen-swift /usr/local/bin/
+        cp .build/release/PluginLibrary /usr/local/bin/
+
+    - name: Generate Swift code from proto files
+      run: |
+        find . -name '*.proto' -exec protoc --swift_out=. --swift_opt=Visibility=Public {} \;
+
     - name: Commit changes
       run: |
         git config --local user.email "actions@github.com"
         git config --local user.name "GitHub Actions"
         git add .
-        git commit -m "Auto-generate Go code from proto files" || echo "No changes to commit"
+        git commit -m "Auto-generate Go & Swift code from proto files" || echo "No changes to commit"
 
     - name: Push changes
       uses: ad-m/github-push-action@master
