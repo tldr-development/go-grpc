@@ -27,5 +27,5 @@ service AddService {
     rpc Add(Request) returns (Response);
     rpc Multiply(Request) returns (Response);
     rpc DataStore(Request) returns (Response);
-    rpc CloudStorage(RequestFile) returns (ResponseFile);
+    rpc CloudStorage(RequestSignedURL) returns (ResponseSignedURL);
 }
