@@ -21,7 +21,7 @@ type AddServiceClient interface {
 	Add(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	Multiply(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	DataStore(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
-	CloudStorage(ctx context.Context, in *RequestFile, opts ...grpc.CallOption) (*ResponseFile, error)
+	CloudStorage(ctx context.Context, in *RequestSignedURL, opts ...grpc.CallOption) (*ResponseSignedURL, error)
 }
 
 type addServiceClient struct {
@@ -59,8 +59,8 @@ func (c *addServiceClient) DataStore(ctx context.Context, in *Request, opts ...g
 	return out, nil
 }
 
-func (c *addServiceClient) CloudStorage(ctx context.Context, in *RequestFile, opts ...grpc.CallOption) (*ResponseFile, error) {
-	out := new(ResponseFile)
+func (c *addServiceClient) CloudStorage(ctx context.Context, in *RequestSignedURL, opts ...grpc.CallOption) (*ResponseSignedURL, error) {
+	out := new(ResponseSignedURL)
 	err := c.cc.Invoke(ctx, "/proto.AddService/CloudStorage", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ type AddServiceServer interface {
 	Add(context.Context, *Request) (*Response, error)
 	Multiply(context.Context, *Request) (*Response, error)
 	DataStore(context.Context, *Request) (*Response, error)
-	CloudStorage(context.Context, *RequestFile) (*ResponseFile, error)
+	CloudStorage(context.Context, *RequestSignedURL) (*ResponseSignedURL, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -92,7 +92,7 @@ func (UnimplementedAddServiceServer) Multiply(context.Context, *Request) (*Respo
 func (UnimplementedAddServiceServer) DataStore(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DataStore not implemented")
 }
-func (UnimplementedAddServiceServer) CloudStorage(context.Context, *RequestFile) (*ResponseFile, error) {
+func (UnimplementedAddServiceServer) CloudStorage(context.Context, *RequestSignedURL) (*ResponseSignedURL, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CloudStorage not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
@@ -163,7 +163,7 @@ func _AddService_DataStore_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _AddService_CloudStorage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestFile)
+	in := new(RequestSignedURL)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func _AddService_CloudStorage_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/proto.AddService/CloudStorage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AddServiceServer).CloudStorage(ctx, req.(*RequestFile))
+		return srv.(AddServiceServer).CloudStorage(ctx, req.(*RequestSignedURL))
 	}
 	return interceptor(ctx, in, info, handler)
 }
