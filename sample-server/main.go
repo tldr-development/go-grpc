@@ -8,9 +8,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/hojin-kr/fiber-grpc/gcp_cloudstorage"
-	"github.com/hojin-kr/fiber-grpc/gcp_datastore"
-	"github.com/hojin-kr/fiber-grpc/proto"
+	"github.com/hojin-kr/fiber-grpc/gcp/cloudstorage"
+	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
+	entity "github.com/hojin-kr/fiber-grpc/gcp/datastore/entity/sample"
+	proto "github.com/hojin-kr/fiber-grpc/proto/sample"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -60,10 +61,10 @@ func (s *server) DataStore(_ context.Context, request *proto.Request) (*proto.Re
 		log.Printf("daastore rpc")
 	}
 	key, value := request.GetA(), request.GetB()
-	gcpDataStoreClient := gcp_datastore.GetClient(context.Background())
+	gcpDataStoreClient := datastore.GetClient(context.Background())
 	kind := "Test"
-	incompleteKey := gcp_datastore.IncompleteKey(kind, nil)
-	completeKey, err := gcpDataStoreClient.Put(context.Background(), incompleteKey, &gcp_datastore.Test{Key: strconv.Itoa(int(key)), Value: strconv.Itoa(int(value))})
+	incompleteKey := datastore.IncompleteKey(kind, nil)
+	completeKey, err := gcpDataStoreClient.Put(context.Background(), incompleteKey, &entity.Test{Key: strconv.Itoa(int(key)), Value: strconv.Itoa(int(value))})
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (s *server) CloudStorage(_ context.Context, requset *proto.RequestSignedURL
 	bucket := "etcd-389303-test"
 	object := "test"
 	// generateV45GetObjectSignedURL
-	url, err := gcp_cloudstorage.GenerateV4GetObjectSignedURL(os.Stdout, bucket, object)
+	url, err := cloudstorage.GenerateV4GetObjectSignedURL(os.Stdout, bucket, object)
 	if err != nil {
 		fmt.Println("Error generating signed URL:", err)
 	}

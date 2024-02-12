@@ -1,4 +1,4 @@
-package gcp_datastore
+package datastore
 
 import (
 	"context"

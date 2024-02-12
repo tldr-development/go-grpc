@@ -1,4 +1,4 @@
-package gcp_datastore
+package sample
 
 type Test struct {
 	Key   string

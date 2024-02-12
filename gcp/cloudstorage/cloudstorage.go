@@ -1,4 +1,4 @@
-package gcp_cloudstorage
+package cloudstorage
 
 import (
 	"context"
