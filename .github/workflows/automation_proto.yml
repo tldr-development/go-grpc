@@ -1,0 +1,29 @@
+name: Generate Protobufs
+
+on:
+  push:
+    paths:
+      - '**.proto'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.21
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install Protoc
+        run: |
+          apt-get update
+          apt-get install -y protobuf-compiler
+
+      - name: Install Protoc Gen Go
+        run: go get google.golang.org/protobuf/cmd/protoc-gen-go
+
+      - name: Generate Protobufs
+        run: |
+          go mod download
+          find . -name '*.proto' -exec protoc --go_out=. {} \;
