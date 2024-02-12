@@ -13,14 +13,14 @@ message Response {
     int64 result = 1;
 }
 
-message RequestFile {
+message RequestSignedURL {
     string filename = 1;
-    bytes data = 2;
+    string contentType = 2;
+    int64 size = 3;
 }
 
-message ResponseFile {
-    string filename = 1;
-    string url = 2;
+message ResponseSignedURL {
+    string url = 1;
 }
 
 service AddService {
