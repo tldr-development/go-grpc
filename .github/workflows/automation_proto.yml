@@ -21,7 +21,9 @@ jobs:
           apt-get install -y protobuf-compiler
 
       - name: Install Protoc Gen Go
-        run: go get google.golang.org/protobuf/cmd/protoc-gen-go
+        run: |
+          go get google.golang.org/protobuf/cmd/protoc-gen-go
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       - name: Generate Protobufs
         run: |
