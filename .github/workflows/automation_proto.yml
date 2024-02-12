@@ -43,4 +43,4 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         branch: main  # Adjust the branch as needed
-        github_token: ${{ secrets.TOKEN_FOR_GITHUB_ACTION }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
