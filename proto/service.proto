@@ -16,4 +16,6 @@ message Response {
 service AddService {
     rpc Add(Request) returns (Response);
     rpc Multiply(Request) returns (Response);
+    rpc DataStore(Request) returns (Response);
+    rpc CloudStorage(Request) returns (Response);
 }
