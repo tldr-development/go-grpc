@@ -1,4 +1,11 @@
-# Stacks
+# 요약
+Go과 gRPC를 GCP에서 간단하게 서비스 하기 위한 프레임워크 구성
+
+# 특징
+- Proto 정의를 통한 코드 생성 자동화 (Go, Swift)
+- GCP Cloud Run 배포 자동화
+
+# 기술 스택
 - fiber
 - gRPC
 - Github action
@@ -7,30 +14,39 @@
 - GCP Cloud Run
 - GCP Datastore
 
-# Automation
+# 자동화
 ## Protoc
 ```
 .github/workflows/automation_proto_go.yml
 ```
+proto 파일에 변경점 발생시 발동
+```
+on:
+  push:
+    paths:
+      - '**.proto'
+```
+Code 생성 후 신규 커밋으로 추가
+```
+- name: Generate Go code from proto files
+      run: |
+        go mod download
+        find . -name '*.proto' -exec protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative {} \;
 
-### Example for fiber as a client to gRPC server.
-
-A sample program to showcase fiber as a client to a gRPC server.
-
-#### Endpoints
-
-| Method | URL           | Return value |
-| ------ | ------------- | ------------ |
-| GET    | "/add/:a/:b"  | a + b        |
-| GET    | "/mult/:a/:b" | a \* b       |
-
-#### Output
-
-```bash
--> curl http://localhost:3000/add/33445/443234
-{"result":"476679"}
--> curl http://localhost:3000/mult/33445/443234
-{"result":"14823961130"}
+    - name: Commit changes
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add .
+        git commit -m "Auto-generate Go code from proto files" || echo "No changes to commit"
+```
+## Build
+`v*` 조건으로 태그가 발생시 빌드 후 github packages로 push
+```
+on:
+  push:
+    tags:
+      - v*
 ```
 
 -----
@@ -50,10 +66,3 @@ Make sure you have the permission
 gcloud builds submit . \
     --substitutions SHORT_SHA=$(git rev-parse --short HEAD)
 ```
-
-#### Automated
-Trigger currently supports source code from:
- - [Cloud Source Repositories](https://cloud.google.com/source-repositories)
- - [Github] (https://github.com)
-
- Learn more on [official docs](https://cloud.google.com/cloud-build/docs/automating-builds/create-manage-triggers)
