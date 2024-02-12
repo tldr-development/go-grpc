@@ -34,7 +34,7 @@ func NewAddServiceClient(cc grpc.ClientConnInterface) AddServiceClient {
 
 func (c *addServiceClient) Add(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/proto.AddService/Add", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto_sample.AddService/Add", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (c *addServiceClient) Add(ctx context.Context, in *Request, opts ...grpc.Ca
 
 func (c *addServiceClient) Multiply(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/proto.AddService/Multiply", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto_sample.AddService/Multiply", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (c *addServiceClient) Multiply(ctx context.Context, in *Request, opts ...gr
 
 func (c *addServiceClient) DataStore(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/proto.AddService/DataStore", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto_sample.AddService/DataStore", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *addServiceClient) DataStore(ctx context.Context, in *Request, opts ...g
 
 func (c *addServiceClient) CloudStorage(ctx context.Context, in *RequestSignedURL, opts ...grpc.CallOption) (*ResponseSignedURL, error) {
 	out := new(ResponseSignedURL)
-	err := c.cc.Invoke(ctx, "/proto.AddService/CloudStorage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto_sample.AddService/CloudStorage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func _AddService_Add_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AddService/Add",
+		FullMethod: "/proto_sample.AddService/Add",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AddServiceServer).Add(ctx, req.(*Request))
@@ -136,7 +136,7 @@ func _AddService_Multiply_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AddService/Multiply",
+		FullMethod: "/proto_sample.AddService/Multiply",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AddServiceServer).Multiply(ctx, req.(*Request))
@@ -154,7 +154,7 @@ func _AddService_DataStore_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AddService/DataStore",
+		FullMethod: "/proto_sample.AddService/DataStore",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AddServiceServer).DataStore(ctx, req.(*Request))
@@ -172,7 +172,7 @@ func _AddService_CloudStorage_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.AddService/CloudStorage",
+		FullMethod: "/proto_sample.AddService/CloudStorage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AddServiceServer).CloudStorage(ctx, req.(*RequestSignedURL))
@@ -184,7 +184,7 @@ func _AddService_CloudStorage_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AddService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.AddService",
+	ServiceName: "proto_sample.AddService",
 	HandlerType: (*AddServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
