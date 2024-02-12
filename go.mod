@@ -1,6 +1,6 @@
 module github.com/gofiber/recipes/fiber-grpc
 
-go 1.19
+go 1.21
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.0
