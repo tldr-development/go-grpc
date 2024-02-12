@@ -46,8 +46,3 @@ func Close() {
 		dataStoreClient.Close()
 	}
 }
-
-type Test struct {
-	Key   string
-	Value string
-}
