@@ -6,7 +6,7 @@ on:
       - '**.proto'
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
