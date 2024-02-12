@@ -39,7 +39,6 @@ jobs:
         cd swift-protobuf
         swift build -c release
         cp .build/release/protoc-gen-swift /usr/local/bin/
-        cp .build/release/PluginLibrary /usr/local/bin/
 
     - name: Generate Swift code from proto files
       run: |
