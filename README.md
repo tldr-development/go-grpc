@@ -16,6 +16,11 @@ Go과 gRPC를 GCP에서 간단하게 서비스 하기 위한 프레임워크 구
 - GCP Datastore
 
 # 자동화
+- gRPC 코드 생성
+- Container build
+- TODO : 클라우드 플랫폼으로 Container Push
+- TODO : 클라우드 플랫폼으로 서비스 Deploy
+
 ## Protoc
 ```
 .github/workflows/automation_proto_go.yml
