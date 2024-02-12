@@ -1,4 +1,4 @@
-module github.com/gofiber/recipes/fiber-grpc
+module github.com/hojin-kr/fiber-grpc
 
 go 1.21
 

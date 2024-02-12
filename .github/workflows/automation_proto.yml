@@ -32,15 +32,15 @@ jobs:
         go mod download
         find . -name '*.proto' -exec protoc --go_out=. --go_opt=paths=source_relative {} \;
 
-    # - name: Commit changes
-    #   run: |
-    #     git config --local user.email "actions@github.com"
-    #     git config --local user.name "GitHub Actions"
-    #     git add .
-    #     git commit -m "Auto-generate Go code from proto files" || echo "No changes to commit"
+    - name: Commit changes
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add .
+        git commit -m "Auto-generate Go code from proto files" || echo "No changes to commit"
 
-    # - name: Push changes
-    #   uses: ad-m/github-push-action@master
-    #   with:
-    #     branch: main  # Adjust the branch as needed
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        branch: main  # Adjust the branch as needed
+        github_token: ${{ secrets.TOKEN_FOR_GITHUB_ACTION }}
