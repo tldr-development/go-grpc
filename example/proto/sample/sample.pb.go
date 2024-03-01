@@ -4,7 +4,7 @@
 // 	protoc        v3.12.4
 // source: proto/sample/sample.proto
 
-package proto_sample
+package sample
 
 import (
 	proto "github.com/golang/protobuf/proto"

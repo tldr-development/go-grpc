@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"context"
@@ -13,6 +13,10 @@ import (
 const buffSize = 1024 * 1024
 
 var lis *bufconn.Listener
+
+type server struct {
+	proto.UnimplementedAddServiceServer
+}
 
 func init() {
 	lis = bufconn.Listen(buffSize)
