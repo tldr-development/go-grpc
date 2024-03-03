@@ -22,6 +22,7 @@ type AddServiceClient interface {
 	Multiply(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	DataStore(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	CloudStorage(ctx context.Context, in *RequestSignedURL, opts ...grpc.CallOption) (*ResponseSignedURL, error)
+	Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -68,6 +69,15 @@ func (c *addServiceClient) CloudStorage(ctx context.Context, in *RequestSignedUR
 	return out, nil
 }
 
+func (c *addServiceClient) Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/sample.AddService/Test", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AddServiceServer is the server API for AddService service.
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
@@ -76,6 +86,7 @@ type AddServiceServer interface {
 	Multiply(context.Context, *Request) (*Response, error)
 	DataStore(context.Context, *Request) (*Response, error)
 	CloudStorage(context.Context, *RequestSignedURL) (*ResponseSignedURL, error)
+	Test(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -94,6 +105,9 @@ func (UnimplementedAddServiceServer) DataStore(context.Context, *Request) (*Resp
 }
 func (UnimplementedAddServiceServer) CloudStorage(context.Context, *RequestSignedURL) (*ResponseSignedURL, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CloudStorage not implemented")
+}
+func (UnimplementedAddServiceServer) Test(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -180,6 +194,24 @@ func _AddService_CloudStorage_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AddService_Test_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).Test(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sample.AddService/Test",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).Test(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AddService_ServiceDesc is the grpc.ServiceDesc for AddService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -202,6 +234,10 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CloudStorage",
 			Handler:    _AddService_CloudStorage_Handler,
+		},
+		{
+			MethodName: "Test",
+			Handler:    _AddService_Test_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
