@@ -205,5 +205,5 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/sample/sample.proto",
+	Metadata: "sample/proto/sample.proto",
 }
