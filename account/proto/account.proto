@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package account;
+
+option go_package = "github.com/hojin-kr/fiber-grpc/account/proto;account/proto";
+
+message Request {
+    string uuid = 1;
+    string token = 2;
+    string platform = 3;
+}
+
+message Response {
+    string uuid = 1;
+    string status = 2;
+    string created = 3;
+    string updated = 4;
+}
+
+service AddService {
+    rpc Init(Request) returns (Response);
+}
