@@ -33,6 +33,10 @@ func IncompleteKey(kind string, parent *datastore.Key) *datastore.Key {
 	return datastore.IncompleteKey(kind, parent)
 }
 
+func NameKey(kind, name string, parent *datastore.Key) *datastore.Key {
+	return datastore.NameKey(kind, name, parent)
+}
+
 func IDKey(kind string, id int64, parent *datastore.Key) *datastore.Key {
 	return datastore.IDKey(kind, id, parent)
 }
@@ -45,4 +49,8 @@ func Close() {
 	if dataStoreClient != nil {
 		dataStoreClient.Close()
 	}
+}
+
+func GetKindByPrefix(prefix, kind string) string {
+	return prefix + ":" + kind
 }
