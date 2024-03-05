@@ -10,8 +10,8 @@ import (
 
 	"github.com/hojin-kr/fiber-grpc/gcp/cloudstorage"
 	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
-	entity "github.com/hojin-kr/fiber-grpc/gcp/datastore/entity/sample"
-	proto "github.com/hojin-kr/fiber-grpc/proto/sample"
+	proto "github.com/hojin-kr/fiber-grpc/sample/proto"
+	entity "github.com/hojin-kr/fiber-grpc/sample/struct"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
