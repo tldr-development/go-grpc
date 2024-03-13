@@ -4,7 +4,7 @@
 // 	protoc        v3.12.4
 // source: account/proto/account.proto
 
-package account_proto
+package proto
 
 import (
 	proto "github.com/golang/protobuf/proto"

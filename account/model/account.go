@@ -1,46 +1,40 @@
-package main
+// account/model/account.go
+package model
 
 import (
 	"context"
 	"log"
-	"net"
 	"os"
 	"strconv"
 	"time"
 
+	"account/proto"
+
+	"gcp/datastore"
+
 	"github.com/google/uuid"
-	proto "github.com/hojin-kr/fiber-grpc/account/proto"
-	account "github.com/hojin-kr/fiber-grpc/account/struct"
-	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
-type server struct {
+type Account struct {
+	UUID    string // uuid
+	Status  string // status
+	Created string // created at timestamp
+	Updated string // updated at timestamp
+}
+
+type Platform struct {
+	AccountID string // Account uuid id (datastore id)
+	Token     string // platform token
+	Platform  string // platform name (ex. github, google, kakao)
+}
+
+type Server struct {
 	proto.UnimplementedAddServiceServer
 }
 
 var env = os.Getenv("ENV")
 
-func main() {
-	lis, err := net.Listen("tcp", ":4040")
-	if err != nil {
-		panic(err)
-	}
-	if env != "live" {
-		log.Printf("Run server")
-	}
-
-	srv := grpc.NewServer()
-	proto.RegisterAddServiceServer(srv, &server{})
-	reflection.Register(srv)
-
-	if e := srv.Serve(lis); e != nil {
-		panic(err)
-	}
-}
-
-func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Response, error) {
+func (s *Server) Init(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	// Sign Up if Request uuid is empty
 	accountUUID := request.GetUuid()
 
@@ -50,7 +44,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	if accountUUID != "" {
 		log.Printf("account_uuid: %s", accountUUID)
 		// DB에서 uuid로 조회
-		account := &account.Account{}
+		account := &Account{}
 		dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), account)
 		return &proto.Response{Uuid: account.UUID, Status: account.Status, Created: account.Created, Updated: account.Updated}, nil
 	}
@@ -60,7 +54,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 
 	timestampStr := strconv.Itoa(int(time.Now().Unix()))
 
-	newAccount := account.Account{
+	newAccount := Account{
 		UUID:    accountUUID,
 		Status:  "active",
 		Created: timestampStr,

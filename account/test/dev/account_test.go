@@ -1,11 +1,12 @@
-package main
+package dev
 
 import (
+	"account/model"
+	"account/proto"
 	"context"
 	"net"
 	"testing"
 
-	proto "github.com/hojin-kr/fiber-grpc/account/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -17,7 +18,7 @@ var lis *bufconn.Listener
 func init() {
 	lis = bufconn.Listen(buffSize)
 	s := grpc.NewServer()
-	proto.RegisterAddServiceServer(s, &server{})
+	proto.RegisterAddServiceServer(s, &model.Server{})
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			panic(err)

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package account;
+package proto;
 
 option go_package = "github.com/hojin-kr/fiber-grpc/account/proto;account/proto";
 
