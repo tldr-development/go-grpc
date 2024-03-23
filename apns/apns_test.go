@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	proto "github.com/hojin-kr/fiber-grpc/account/proto"
+	proto "github.com/hojin-kr/fiber-grpc/apns/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -29,7 +29,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func TestInit(t *testing.T) {
+func TestSetToken(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
@@ -38,26 +38,62 @@ func TestInit(t *testing.T) {
 	defer conn.Close()
 
 	client := proto.NewAddServiceClient(conn)
-	// 기존 계정 조회
-	req := &proto.Request{Uuid: "3364c611-0f37-4f3d-bf96-295dc8d3c56e"}
-	res, err := client.Init(ctx, req)
-	t.Logf("res: %v", res)
+	req := &proto.Request{Uuid: "test-uuid", Token: "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	res, err := client.SetToken(ctx, req)
 	if err != nil {
-		t.Fatalf("Init failed: %v", err)
+		t.Fatalf("SetToken failed: %v", err)
 	}
-	if res.Uuid == "" {
-		t.Fatalf("Expected uuid, got %s", res.Uuid)
+	if res.Token == "" {
+		t.Fatalf("Expected token, got %s", res.Token)
 	}
+}
 
-	// 신규 계정 생성
-	req = &proto.Request{}
-	res, err = client.Init(ctx, req)
-	t.Logf("res: %v", res)
+func TestGetToken(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Init failed: %v", err)
+		t.Fatalf("Failed to dial bufnet: %v", err)
 	}
-	if res.Uuid == "" {
-		t.Fatalf("Expected uuid, got %s", res.Uuid)
-	}
+	defer conn.Close()
 
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{Uuid: "test-uuid"}
+	res, err := client.GetToken(ctx, req)
+	if err != nil {
+		t.Fatalf("GetToken failed: %v", err)
+	}
+	if res.Token == "" {
+		t.Fatalf("Expected token, got %s", res.Token)
+	}
+	t.Log(res)
+}
+
+func TestNotification(t *testing.T) {
+	apnsTokens := []string{"785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009", "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	title := "title"
+	subtitle := "subtitle"
+	body := "body"
+	notification(apnsTokens, title, subtitle, body)
+
+	t.Log("Notification success")
+}
+
+func TestSendNotification(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{Uuid: "test-uuid", Token: "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	res, err := client.SendNotification(ctx, req)
+	if err != nil {
+		t.Fatalf("SendNotification failed: %v", err)
+	}
+	if res.Token == "" {
+		t.Fatalf("Expected token, got %s", res.Token)
+	}
+	t.Log(res)
 }

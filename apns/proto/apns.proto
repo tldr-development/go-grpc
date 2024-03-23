@@ -17,4 +17,5 @@ message Response {
 service AddService {
     rpc SetToken(Request) returns (Response);
     rpc GetToken(Request) returns (Response);
+    rpc SendNotification(Request) returns (Response);
 }
