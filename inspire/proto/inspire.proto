@@ -6,17 +6,16 @@ option go_package = "github.com/hojin-kr/fiber-grpc/inspire/proto;inspire/proto"
 
 message Request {
     string uuid = 1;
-    string token = 2;
-    string platform = 3;
+    string prompt = 2;
+    string context = 3;
 }
 
 message Response {
     string uuid = 1;
-    string status = 2;
-    string created = 3;
-    string updated = 4;
+    string prompt = 2;
+    string context = 3;
 }
 
 service AddService {
-    rpc Init(Request) returns (Response);
+    rpc Inspire(Request) returns (Response);
 }
