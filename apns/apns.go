@@ -1,4 +1,4 @@
-package apns
+package main
 
 import (
 	"context"
