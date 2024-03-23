@@ -1,11 +1,11 @@
-package account
+package main
 
 import (
 	"context"
 	"net"
 	"testing"
 
-	proto "github.com/hojin-kr/fiber-grpc/account/proto"
+	proto "github.com/hojin-kr/fiber-grpc/inspire/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )

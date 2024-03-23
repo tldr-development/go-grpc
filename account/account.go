@@ -1,4 +1,4 @@
-package main
+package account
 
 import (
 	"context"
@@ -21,6 +21,7 @@ type server struct {
 }
 
 var env = os.Getenv("ENV")
+var app = os.Getenv("APP")
 
 func main() {
 	lis, err := net.Listen("tcp", ":4040")
@@ -45,7 +46,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	accountUUID := request.GetUuid()
 
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix("test", "account")
+	kind := datastore.GetKindByPrefix(app+env, "account")
 
 	if accountUUID != "" {
 		log.Printf("account_uuid: %s", accountUUID)
