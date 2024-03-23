@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AddServiceClient interface {
-	Init(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	Inspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -29,9 +29,9 @@ func NewAddServiceClient(cc grpc.ClientConnInterface) AddServiceClient {
 	return &addServiceClient{cc}
 }
 
-func (c *addServiceClient) Init(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+func (c *addServiceClient) Inspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/inspire.AddService/Init", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/Inspire", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (c *addServiceClient) Init(ctx context.Context, in *Request, opts ...grpc.C
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
 type AddServiceServer interface {
-	Init(context.Context, *Request) (*Response, error)
+	Inspire(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -50,8 +50,8 @@ type AddServiceServer interface {
 type UnimplementedAddServiceServer struct {
 }
 
-func (UnimplementedAddServiceServer) Init(context.Context, *Request) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Init not implemented")
+func (UnimplementedAddServiceServer) Inspire(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Inspire not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -66,20 +66,20 @@ func RegisterAddServiceServer(s grpc.ServiceRegistrar, srv AddServiceServer) {
 	s.RegisterService(&AddService_ServiceDesc, srv)
 }
 
-func _AddService_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AddService_Inspire_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AddServiceServer).Init(ctx, in)
+		return srv.(AddServiceServer).Inspire(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/inspire.AddService/Init",
+		FullMethod: "/inspire.AddService/Inspire",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AddServiceServer).Init(ctx, req.(*Request))
+		return srv.(AddServiceServer).Inspire(ctx, req.(*Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -92,8 +92,8 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AddServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Init",
-			Handler:    _AddService_Init_Handler,
+			MethodName: "Inspire",
+			Handler:    _AddService_Inspire_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
