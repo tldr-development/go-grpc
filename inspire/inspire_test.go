@@ -51,3 +51,22 @@ func TestInspire(t *testing.T) {
 		t.Fatalf("Expected response, got %v", res)
 	}
 }
+
+func TestSendNotifications(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{}
+	res, err := client.SendNotifications(ctx, req)
+	if err != nil {
+		t.Fatalf("SendNotifications failed: %v", err)
+	}
+	if res == nil {
+		t.Fatalf("Expected response, got %v", res)
+	}
+}
