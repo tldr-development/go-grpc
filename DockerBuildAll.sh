@@ -5,7 +5,7 @@ VERSION=1.0.10
 TARGETS=(account apns inspire)
 
 for TARGET in "${TARGETS[@]}"; do
-cat << EOF > Dockerfile_$TARGET
+cat << EOF > Dockerfile
 FROM golang:1.21 as build-go
 WORKDIR /app
 COPY go.mod .
@@ -24,7 +24,8 @@ ENTRYPOINT ["./app"]
 
 EOF
         echo "Building $TAG_BASE$TARGET:$VERSION"
-        docker build -t $TAG_BASE$TARGET:$VERSION -f Dockerfile_$TARGET .
-        gcloud builds submit . --tag=$TAG_BASE$TARGET:$VERSION
-        rm Dockerfile_$TARGET
+        docker build -t $TAG_BASE$TARGET:$VERSION -f Dockerfile .
+        # push to gcr
+        gcloud builds submit . --tag $TAG_BASE$TARGET:$VERSION
+        rm Dockerfile
 done

@@ -29,7 +29,7 @@ const location = "us-central1"
 const model = "gemini-1.0-pro-001"
 
 func main() {
-	lis, err := net.Listen("tcp", ":4040")
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
 	if err != nil {
 		panic(err)
 	}

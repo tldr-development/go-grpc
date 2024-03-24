@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	b64 "encoding/base64"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -35,7 +36,7 @@ var (
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":4040")
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
 	if err != nil {
 		panic(err)
 	}

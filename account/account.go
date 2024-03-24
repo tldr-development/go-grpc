@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -24,7 +25,7 @@ var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
 
 func main() {
-	lis, err := net.Listen("tcp", ":4040")
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
 	if err != nil {
 		panic(err)
 	}

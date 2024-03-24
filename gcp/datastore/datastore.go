@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	projectId       = os.Getenv("GCP_PROJECT_ID")
+	projectId       = os.Getenv("PROJECT_ID")
 	env             = os.Getenv("ENV")
 	dataStoreClient *datastore.Client
 )
