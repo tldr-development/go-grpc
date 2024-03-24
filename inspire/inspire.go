@@ -57,6 +57,28 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	return &proto.Response{}, nil
 }
 
+func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	// pendding 상태의 inspire를 조회하여 notification을 보낸다.
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	query := datastore.NewQuery(kind).FilterField("status", "=", "pending")
+	inspires := []inspire_struct.Inspire{}
+	keys, _ := dbClient.GetAll(context.Background(), query, &inspires)
+
+	for _, key := range keys {
+		// request to notification grpc server
+		// inspire의 status를 complete로 변경
+		inspires[key.ID].Status = "complete"
+		_, err := dbClient.Put(context.Background(), datastore.IDKey(kind, key.ID, nil), inspires[key.ID])
+		if err != nil {
+			log.Printf("Failed to put: %v", err)
+		}
+	}
+
+	return &proto.Response{}, nil
+}
+
 func generateByGemini(prompt string, uuid string) []string {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)

@@ -18,4 +18,5 @@ message Response {
 
 service AddService {
     rpc Inspire(Request) returns (Response);
+    rpc SendNotification(Request) returns (Response);
 }
