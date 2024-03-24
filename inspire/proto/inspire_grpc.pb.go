@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 type AddServiceClient interface {
 	Inspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	UpdateInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -48,12 +50,32 @@ func (c *addServiceClient) SendNotifications(ctx context.Context, in *Request, o
 	return out, nil
 }
 
+func (c *addServiceClient) GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/GetInspires", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) UpdateInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/UpdateInspire", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AddServiceServer is the server API for AddService service.
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
 type AddServiceServer interface {
 	Inspire(context.Context, *Request) (*Response, error)
 	SendNotifications(context.Context, *Request) (*Response, error)
+	GetInspires(context.Context, *Request) (*Response, error)
+	UpdateInspire(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -66,6 +88,12 @@ func (UnimplementedAddServiceServer) Inspire(context.Context, *Request) (*Respon
 }
 func (UnimplementedAddServiceServer) SendNotifications(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendNotifications not implemented")
+}
+func (UnimplementedAddServiceServer) GetInspires(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInspires not implemented")
+}
+func (UnimplementedAddServiceServer) UpdateInspire(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInspire not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -116,6 +144,42 @@ func _AddService_SendNotifications_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AddService_GetInspires_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GetInspires(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/inspire.AddService/GetInspires",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GetInspires(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_UpdateInspire_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).UpdateInspire(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/inspire.AddService/UpdateInspire",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).UpdateInspire(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AddService_ServiceDesc is the grpc.ServiceDesc for AddService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +194,14 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendNotifications",
 			Handler:    _AddService_SendNotifications_Handler,
+		},
+		{
+			MethodName: "GetInspires",
+			Handler:    _AddService_GetInspires_Handler,
+		},
+		{
+			MethodName: "UpdateInspire",
+			Handler:    _AddService_UpdateInspire_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
