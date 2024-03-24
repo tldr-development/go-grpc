@@ -28,11 +28,6 @@ var projectID = os.Getenv("PROJECT_ID")
 const location = "us-central1"
 const model = "gemini-1.0-pro-001"
 
-var statusList = []string{
-	"pending",
-	"completed",
-}
-
 func main() {
 	lis, err := net.Listen("tcp", ":4040")
 	if err != nil {
