@@ -2,11 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"time"
 
+	"cloud.google.com/go/vertexai/genai"
+	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
 	proto "github.com/hojin-kr/fiber-grpc/inspire/proto"
+	inspire_struct "github.com/hojin-kr/fiber-grpc/inspire/struct"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -17,6 +23,15 @@ type server struct {
 
 var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
+var projectID = os.Getenv("PROJECT_ID")
+
+const location = "us-central1"
+const model = "gemini-1.0-pro-001"
+
+var statusList = []string{
+	"pending",
+	"completed",
+}
 
 func main() {
 	lis, err := net.Listen("tcp", ":4040")
@@ -37,11 +52,64 @@ func main() {
 }
 
 func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
-	// requset to llm
+	prompt := request.GetPrompt() + "\n" + request.GetContext()
+	uuid := request.GetUuid()
 
-	// set inspire datastore kind
+	generateByGemini(prompt, uuid)
 
-	// requset to push notification apns
+	// requset to notification grpc server
 
 	return &proto.Response{}, nil
+}
+
+func generateByGemini(prompt string, uuid string) []string {
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, projectID, location)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
+	model := client.GenerativeModel(model)
+	model.SetTemperature(0.9)
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	parts := printResponse(resp)
+
+	for _, part := range parts {
+		fmt.Println(part + "\n")
+		setInpireDatastore(uuid, prompt, part)
+	}
+	return parts
+}
+
+func printResponse(resp *genai.GenerateContentResponse) []string {
+	var parts []string
+	for _, cand := range resp.Candidates {
+		for _, part := range cand.Content.Parts {
+			parts = append(parts, fmt.Sprint(part))
+		}
+	}
+	return parts
+}
+
+func setInpireDatastore(uuid, prompt, message string) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	inspire := &inspire_struct.Inspire{}
+	inspire.UUID = uuid
+	inspire.Prompt = prompt
+	inspire.Message = message
+	inspire.Created = strconv.Itoa(int(time.Now().Unix()))
+	inspire.Status = "pending"
+
+	_, err := dbClient.Put(context.Background(), datastore.IncompleteKey(kind, nil), inspire)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+	}
+	log.Printf("inspire: %v", inspire)
 }

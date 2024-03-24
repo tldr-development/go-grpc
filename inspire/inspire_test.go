@@ -29,7 +29,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
-func TestInit(t *testing.T) {
+func TestInspire(t *testing.T) {
 	ctx := context.Background()
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
@@ -38,26 +38,16 @@ func TestInit(t *testing.T) {
 	defer conn.Close()
 
 	client := proto.NewAddServiceClient(conn)
-	// 기존 계정 조회
-	req := &proto.Request{Uuid: "3364c611-0f37-4f3d-bf96-295dc8d3c56e"}
-	res, err := client.Init(ctx, req)
-	t.Logf("res: %v", res)
+	req := &proto.Request{
+		Prompt:  "안녕하세요, 저는 지금 약간은 우울하고 하는일이 잘 안되고 블루한 기분을 가지고 있어요.",
+		Context: "심리 상담가의 입장에서 140자 정도의 편지를 적어주는데, 심리 상담가라는 것을 알리지 않고, 그냥 친구라고 생각하고 적어주세요. \n 그리고 이전 편지는 '안녕, 친구야. 최근에 기분이 안 좋다는 소식을 들었는데, 정말 미안해. 너를 걱정하게 돼. 힘든 시간을 보내고 있다는 걸 알아, 하지만 너가 홀로 아니라는 걸 잊지 마. 언제든 나에게 연락할 수 있어. 내가 도와 줄 수 있는 일이 없을지도 몰라도, 언제든지 귀 기울이고, 너를 위한 시간을 갖겠다는 건 알아줬으면 좋겠어. 앞으로 힘들면 나에게 알려줘. 항상 곁에 있을게.' 이렇게 적었으니까 참고해줘",
+		Uuid:    "test-uuid",
+	}
+	res, err := client.Inspire(ctx, req)
 	if err != nil {
-		t.Fatalf("Init failed: %v", err)
+		t.Fatalf("Inspire failed: %v", err)
 	}
-	if res.Uuid == "" {
-		t.Fatalf("Expected uuid, got %s", res.Uuid)
+	if res == nil {
+		t.Fatalf("Expected response, got %v", res)
 	}
-
-	// 신규 계정 생성
-	req = &proto.Request{}
-	res, err = client.Init(ctx, req)
-	t.Logf("res: %v", res)
-	if err != nil {
-		t.Fatalf("Init failed: %v", err)
-	}
-	if res.Uuid == "" {
-		t.Fatalf("Expected uuid, got %s", res.Uuid)
-	}
-
 }

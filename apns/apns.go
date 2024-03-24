@@ -93,9 +93,9 @@ func (s *server) GetToken(_ context.Context, request *proto.Request) (*proto.Res
 // send notification using apns token
 func (s *server) SendNotification(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	accountUUID := request.GetUuid()
-	title := "title dummy"
-	subtitle := "subtitle dummy"
-	body := "body dummy"
+	title := request.GetTitle()
+	subtitle := request.GetSubtitle()
+	body := request.GetBody()
 
 	if request.Token != "" {
 		notification([]string{request.Token}, title, subtitle, body)
