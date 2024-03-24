@@ -38,7 +38,7 @@ func TestSetToken(t *testing.T) {
 	defer conn.Close()
 
 	client := proto.NewAddServiceClient(conn)
-	req := &proto.Request{Uuid: "test-uuid", Token: "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	req := &proto.Request{Uuid: "test-uuid", Token: "c9c1dc30c554d2093a3641758ac90bac4ba0faa3de935581ae9756eddcde857e"}
 	res, err := client.SetToken(ctx, req)
 	if err != nil {
 		t.Fatalf("SetToken failed: %v", err)
@@ -69,7 +69,7 @@ func TestGetToken(t *testing.T) {
 }
 
 func TestNotification(t *testing.T) {
-	apnsTokens := []string{"785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009", "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	apnsTokens := []string{"c9c1dc30c554d2093a3641758ac90bac4ba0faa3de935581ae9756eddcde857e", "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
 	title := "title"
 	subtitle := "subtitle"
 	body := "body"
@@ -87,7 +87,7 @@ func TestSendNotification(t *testing.T) {
 	defer conn.Close()
 
 	client := proto.NewAddServiceClient(conn)
-	req := &proto.Request{Uuid: "test-uuid", Token: "785568d447412ab9655333f1206e30275a18fba6a6b49a174652391cd3f9d009"}
+	req := &proto.Request{Uuid: "test-uuid", Token: "c9c1dc30c554d2093a3641758ac90bac4ba0faa3de935581ae9756eddcde857e"}
 	res, err := client.SendNotification(ctx, req)
 	if err != nil {
 		t.Fatalf("SendNotification failed: %v", err)
