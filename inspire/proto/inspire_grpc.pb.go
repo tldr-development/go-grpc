@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AddServiceClient interface {
 	Inspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
-	SendNotification(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -39,9 +39,9 @@ func (c *addServiceClient) Inspire(ctx context.Context, in *Request, opts ...grp
 	return out, nil
 }
 
-func (c *addServiceClient) SendNotification(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+func (c *addServiceClient) SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/inspire.AddService/SendNotification", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/SendNotifications", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *addServiceClient) SendNotification(ctx context.Context, in *Request, op
 // for forward compatibility
 type AddServiceServer interface {
 	Inspire(context.Context, *Request) (*Response, error)
-	SendNotification(context.Context, *Request) (*Response, error)
+	SendNotifications(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -64,8 +64,8 @@ type UnimplementedAddServiceServer struct {
 func (UnimplementedAddServiceServer) Inspire(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Inspire not implemented")
 }
-func (UnimplementedAddServiceServer) SendNotification(context.Context, *Request) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendNotification not implemented")
+func (UnimplementedAddServiceServer) SendNotifications(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendNotifications not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -98,20 +98,20 @@ func _AddService_Inspire_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AddService_SendNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AddService_SendNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AddServiceServer).SendNotification(ctx, in)
+		return srv.(AddServiceServer).SendNotifications(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/inspire.AddService/SendNotification",
+		FullMethod: "/inspire.AddService/SendNotifications",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AddServiceServer).SendNotification(ctx, req.(*Request))
+		return srv.(AddServiceServer).SendNotifications(ctx, req.(*Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -128,8 +128,8 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AddService_Inspire_Handler,
 		},
 		{
-			MethodName: "SendNotification",
-			Handler:    _AddService_SendNotification_Handler,
+			MethodName: "SendNotifications",
+			Handler:    _AddService_SendNotifications_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
