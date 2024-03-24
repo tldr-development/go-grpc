@@ -60,6 +60,23 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	return &proto.Response{}, nil
 }
 
+// 내 inspire 목록을 조회
+func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete")
+	inspires := []inspire_struct.Inspire{}
+	dbClient.GetAll(context.Background(), query, &inspires)
+
+	for _, inspire := range inspires {
+		log.Printf("inspire: %v", inspire)
+	}
+
+	// todo return inspires list to client
+	return &proto.Response{}, nil
+}
+
 func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	// pendding 상태의 inspire를 조회하여 notification을 보낸다.
 	dbClient := datastore.GetClient(context.Background())
@@ -149,6 +166,7 @@ func setInpireDatastore(_uuid, prompt, message string) {
 }
 
 func invokeNotification(inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
+	// todo 연결 재활용 하도록
 	creds := credentials.NewClientTLSFromCert(nil, "")
 	conn, err := grpc.Dial(apns_server, grpc.WithTransportCredentials(creds))
 	if err != nil {

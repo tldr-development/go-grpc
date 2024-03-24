@@ -8,15 +8,25 @@ message Request {
     string uuid = 1;
     string prompt = 2;
     string context = 3;
+    string message = 4;
+    string status = 5;
+    string created_at = 6;
+    string updated_at = 7;
 }
 
 message Response {
     string uuid = 1;
     string prompt = 2;
     string context = 3;
+    string message = 4;
+    string status = 5;
+    string created_at = 6;
+    string updated_at = 7;
 }
 
 service AddService {
     rpc Inspire(Request) returns (Response);
     rpc SendNotifications(Request) returns (Response);
+    rpc GetInspires(Request) returns (Response);
+    rpc UpdateInspire(Request) returns (Response);
 }
