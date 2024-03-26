@@ -74,6 +74,40 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	}
 
 	// todo return inspires list to client
+	return &proto.Responses{Responses: inspires}, nil
+}
+
+// SendNotification 특정 유저의 inspire를 조회하여 pending 상태만 notification을 보낸다.
+func (s *server) SendNotification(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending")
+	inspires := []inspire_struct.Inspire{}
+	dbClient.GetAll(context.Background(), query, &inspires)
+
+	wg := sync.WaitGroup{}
+
+	for _, inspire := range inspires {
+		if inspire.NameKey == "" {
+			log.Print("continue")
+			continue
+		}
+		// request to notification grpc server
+		wg.Add(1)
+		go invokeNotification(inspire, &wg)
+		// inspire의 status를 complete로 변경
+		inspire.Status = "complete"
+		inspire.Updated = strconv.Itoa(int(time.Now().Unix()))
+
+		_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, inspire.NameKey, nil), &inspire)
+		if err != nil {
+			log.Printf("Failed to put: %v", err)
+		}
+		log.Print("inspire notification : ", inspire.NameKey)
+	}
+	wg.Wait()
+
 	return &proto.Response{}, nil
 }
 

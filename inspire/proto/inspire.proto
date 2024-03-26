@@ -24,6 +24,10 @@ message Response {
     string updated_at = 7;
 }
 
+message Responses {
+    repeated Response responses = 1;
+}
+
 service AddService {
     rpc Inspire(Request) returns (Response);
     rpc SendNotifications(Request) returns (Response);
