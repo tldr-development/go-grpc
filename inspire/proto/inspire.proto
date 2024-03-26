@@ -31,6 +31,6 @@ message Responses {
 service AddService {
     rpc Inspire(Request) returns (Response);
     rpc SendNotifications(Request) returns (Response);
-    rpc GetInspires(Request) returns (Response);
+    rpc GetInspires(Request) returns (Responses);
     rpc UpdateInspire(Request) returns (Response);
 }
