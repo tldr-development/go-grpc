@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type AddServiceClient interface {
 	Inspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
-	GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Responses, error)
 	UpdateInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
@@ -50,8 +50,8 @@ func (c *addServiceClient) SendNotifications(ctx context.Context, in *Request, o
 	return out, nil
 }
 
-func (c *addServiceClient) GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
+func (c *addServiceClient) GetInspires(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Responses, error) {
+	out := new(Responses)
 	err := c.cc.Invoke(ctx, "/inspire.AddService/GetInspires", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (c *addServiceClient) UpdateInspire(ctx context.Context, in *Request, opts 
 type AddServiceServer interface {
 	Inspire(context.Context, *Request) (*Response, error)
 	SendNotifications(context.Context, *Request) (*Response, error)
-	GetInspires(context.Context, *Request) (*Response, error)
+	GetInspires(context.Context, *Request) (*Responses, error)
 	UpdateInspire(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
@@ -89,7 +89,7 @@ func (UnimplementedAddServiceServer) Inspire(context.Context, *Request) (*Respon
 func (UnimplementedAddServiceServer) SendNotifications(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendNotifications not implemented")
 }
-func (UnimplementedAddServiceServer) GetInspires(context.Context, *Request) (*Response, error) {
+func (UnimplementedAddServiceServer) GetInspires(context.Context, *Request) (*Responses, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInspires not implemented")
 }
 func (UnimplementedAddServiceServer) UpdateInspire(context.Context, *Request) (*Response, error) {
