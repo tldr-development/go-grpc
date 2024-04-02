@@ -214,7 +214,6 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 }
 
 func generateByGemini(prompt, gen_context, _uuid string) []string {
-	prompt = prompt + "\n" + gen_context
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
@@ -224,7 +223,7 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 
 	model := client.GenerativeModel(model)
 	model.SetTemperature(0.9)
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt+"\n"+gen_context))
 	if err != nil {
 		log.Fatal(err)
 	}
