@@ -80,6 +80,27 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	return &proto.Responses{Responses: responses}, nil
 }
 
+// 내 마지막 inspire를 조회
+func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(1)
+	inspires := []inspire_struct.Inspire{}
+	dbClient.GetAll(context.Background(), query, &inspires)
+
+	if len(inspires) == 0 {
+		return &proto.Response{}, nil
+	}
+
+	inspire := inspires[0]
+	response := &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, CreatedAt: inspire.Created, UpdatedAt: inspire.Updated}
+	log.Printf("inspire: %v", inspire)
+
+	// return inspire to client
+	return response, nil
+}
+
 // SendNotification 특정 유저의 inspire를 조회하여 pending 상태만 notification을 보낸다.
 func (s *server) SendNotification(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())

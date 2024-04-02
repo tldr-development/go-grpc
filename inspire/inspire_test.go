@@ -91,3 +91,24 @@ func TestGetInspires(t *testing.T) {
 		t.Fatalf("Expected response, got %v", res)
 	}
 }
+
+func TestGetLastInspire(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{
+		Uuid: "870ac164-9143-4165-aea1-1d93c3673e67",
+	}
+	res, err := client.GetLastInspire(ctx, req)
+	if err != nil {
+		t.Fatalf("GetLastInspire failed: %v", err)
+	}
+	if res == nil {
+		t.Fatalf("Expected response, got %v", res)
+	}
+}

@@ -33,4 +33,5 @@ service AddService {
     rpc SendNotifications(Request) returns (Response);
     rpc GetInspires(Request) returns (Responses);
     rpc UpdateInspire(Request) returns (Response);
+    rpc GetLastInspire(Request) returns (Response);
 }
