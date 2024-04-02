@@ -16,6 +16,7 @@ import (
 	proto "github.com/hojin-kr/fiber-grpc/inspire/proto"
 	inspire_struct "github.com/hojin-kr/fiber-grpc/inspire/struct"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -141,6 +142,13 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 
 	wg := sync.WaitGroup{}
 
+	creds := credentials.NewClientTLSFromCert(nil, "")
+	conn, err := grpc.Dial(apns_server, grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Fatalf("Failed to dial: %v", err)
+	}
+	c := apns_proto.NewAddServiceClient(conn)
+
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -148,7 +156,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(inspire, &wg)
+		go invokeNotification(c, inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
 		inspire.Updated = int64(time.Now().Unix())
@@ -175,6 +183,13 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 
 	wg := sync.WaitGroup{}
 
+	creds := credentials.NewClientTLSFromCert(nil, "")
+	conn, err := grpc.Dial(apns_server, grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Fatalf("Failed to dial: %v", err)
+	}
+	c := apns_proto.NewAddServiceClient(conn)
+
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -182,7 +197,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(inspire, &wg)
+		go invokeNotification(c, inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
 		inspire.Updated = int64(time.Now().Unix())
@@ -283,16 +298,9 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 	return inspire.NameKey
 }
 
-func invokeNotification(inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
-	conn, err := grpc.Dial(apns_server, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Failed to dial: %v", err)
-	}
-
+func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
 	ctx := context.Background()
-	c := apns_proto.NewAddServiceClient(conn)
-
-	_, err = c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
+	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
