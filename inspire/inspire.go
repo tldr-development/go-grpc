@@ -52,10 +52,11 @@ func main() {
 }
 
 func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
-	prompt := request.GetPrompt() + "\n" + request.GetContext()
+	prompt := request.GetPrompt()
+	gen_context := request.GetContext()
 	_uuid := request.GetUuid()
 
-	generateByGemini(prompt, _uuid)
+	generateByGemini(prompt, gen_context, _uuid)
 
 	return &proto.Response{}, nil
 }
@@ -147,7 +148,8 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	return &proto.Response{}, nil
 }
 
-func generateByGemini(prompt string, _uuid string) []string {
+func generateByGemini(prompt, gen_context, _uuid string) []string {
+	prompt = prompt + "\n" + gen_context
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
@@ -166,7 +168,7 @@ func generateByGemini(prompt string, _uuid string) []string {
 
 	for _, part := range parts {
 		fmt.Println(part + "\n")
-		setInpireDatastore(_uuid, prompt, part)
+		setInpireDatastore(_uuid, prompt, gen_context, part)
 	}
 	return parts
 }
@@ -181,13 +183,14 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 	return parts
 }
 
-func setInpireDatastore(_uuid, prompt, message string) {
+func setInpireDatastore(_uuid, prompt, gen_context, message string) {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+env, "inspire")
 
 	inspire := &inspire_struct.Inspire{}
 	inspire.UUID = _uuid
 	inspire.Prompt = prompt
+	inspire.Context = gen_context
 	inspire.Message = message
 	inspire.Created = strconv.Itoa(int(time.Now().Unix()))
 	inspire.Status = "pending"
