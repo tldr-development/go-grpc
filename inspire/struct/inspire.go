@@ -6,7 +6,7 @@ type Inspire struct {
 	Prompt  string // prompt
 	Context string // context
 	Message string // response llm 에서 생성한 메시지
-	Created string // created at timestamp llm 에서 생성한 시간
-	Updated string // updated at timestamp Status가 변경된 시간
+	Created int64  // created at timestamp llm 에서 생성한 시간
+	Updated int64  // updated at timestamp Status가 변경된 시간
 	NameKey string
 }

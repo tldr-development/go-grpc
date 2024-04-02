@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	proto "github.com/hojin-kr/fiber-grpc/inspire/proto"
 	inspire_struct "github.com/hojin-kr/fiber-grpc/inspire/struct"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -72,7 +70,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 
 	responses := []*proto.Response{}
 	for _, inspire := range inspires {
-		responses = append(responses, &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, CreatedAt: inspire.Created, UpdatedAt: inspire.Updated})
+		responses = append(responses, &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, Created: inspire.Created, Updated: inspire.Updated})
 		log.Printf("inspire: %v", inspire)
 	}
 
@@ -83,22 +81,37 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 // 내 마지막 inspire를 조회
 func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(1)
-	inspires := []inspire_struct.Inspire{}
-	dbClient.GetAll(context.Background(), query, &inspires)
-
-	if len(inspires) == 0 {
-		return &proto.Response{}, nil
-	}
-
-	inspire := inspires[0]
-	response := &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, CreatedAt: inspire.Created, UpdatedAt: inspire.Updated}
+	inspire := &inspire_struct.Inspire{}
+	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
+	response := &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, Created: inspire.Created, Updated: inspire.Updated}
 	log.Printf("inspire: %v", inspire)
 
 	// return inspire to client
 	return response, nil
+}
+
+// 내 inspire를 삭제
+func (s *server) DeleteInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	inspire := &inspire_struct.Inspire{}
+	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
+
+	inspire.Status = "deleted"
+	inspire.Updated = int64(time.Now().Unix())
+
+	_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+	}
+
+	log.Printf("inspire: %v", inspire)
+
+	// return inspire to client
+	return &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, Created: inspire.Created, Updated: inspire.Updated}, nil
 }
 
 // SendNotification 특정 유저의 inspire를 조회하여 pending 상태만 notification을 보낸다.
@@ -112,6 +125,13 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 
 	wg := sync.WaitGroup{}
 
+	apns_grpc, err := grpc.Dial(apns_server, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to dial bufnet: %v", err)
+	}
+
+	apns_conn := apns_proto.NewAddServiceClient(apns_grpc)
+
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -119,10 +139,10 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(inspire, &wg)
+		go invokeNotification(apns_conn, inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
-		inspire.Updated = strconv.Itoa(int(time.Now().Unix()))
+		inspire.Updated = int64(time.Now().Unix())
 
 		_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, inspire.NameKey, nil), &inspire)
 		if err != nil {
@@ -146,6 +166,13 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 
 	wg := sync.WaitGroup{}
 
+	apns_grpc, err := grpc.Dial(apns_server, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to dial bufnet: %v", err)
+	}
+
+	apns_conn := apns_proto.NewAddServiceClient(apns_grpc)
+
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -153,10 +180,10 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(inspire, &wg)
+		go invokeNotification(apns_conn, inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
-		inspire.Updated = strconv.Itoa(int(time.Now().Unix()))
+		inspire.Updated = int64(time.Now().Unix())
 
 		_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, inspire.NameKey, nil), &inspire)
 		if err != nil {
@@ -187,11 +214,39 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 
 	parts := printResponse(resp)
 
+	// set last inspire
+	inspireLastNameKey := ""
 	for _, part := range parts {
 		fmt.Println(part + "\n")
-		setInpireDatastore(_uuid, prompt, gen_context, part)
+		inspireLastNameKey = setInpireDatastore(_uuid, prompt, gen_context, part)
+	}
+	if inspireLastNameKey != "" {
+		setLastInspire(_uuid, prompt, gen_context, parts[len(parts)-1])
 	}
 	return parts
+}
+
+// set last inspire
+func setLastInspire(_uuid, prompt, gen_context, message string) string {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+
+	inspire := &inspire_struct.Inspire{}
+	inspire.UUID = _uuid
+	inspire.Prompt = prompt
+	inspire.Context = gen_context
+	inspire.Message = message
+	inspire.Created = int64(time.Now().Unix())
+	inspire.Status = "pending"
+	inspire.NameKey = uuid.New().String()
+
+	UUID := datastore.NameKey(kind, inspire.UUID, nil)
+	_, err := dbClient.Put(context.Background(), UUID, inspire)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+	}
+	log.Printf("inspire: %v", inspire)
+	return inspire.NameKey
 }
 
 func printResponse(resp *genai.GenerateContentResponse) []string {
@@ -204,7 +259,7 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 	return parts
 }
 
-func setInpireDatastore(_uuid, prompt, gen_context, message string) {
+func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+env, "inspire")
 
@@ -213,7 +268,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) {
 	inspire.Prompt = prompt
 	inspire.Context = gen_context
 	inspire.Message = message
-	inspire.Created = strconv.Itoa(int(time.Now().Unix()))
+	inspire.Created = int64(time.Now().Unix())
 	inspire.Status = "pending"
 	inspire.NameKey = uuid.New().String()
 
@@ -223,20 +278,12 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) {
 		log.Printf("Failed to put: %v", err)
 	}
 	log.Printf("inspire: %v", inspire)
+	return inspire.NameKey
 }
 
-func invokeNotification(inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
-	// todo 연결 재활용 하도록
-	creds := credentials.NewClientTLSFromCert(nil, "")
-	conn, err := grpc.Dial(apns_server, grpc.WithTransportCredentials(creds))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-
-	c := apns_proto.NewAddServiceClient(conn)
+func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
 	ctx := context.Background()
-	_, err = c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
+	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

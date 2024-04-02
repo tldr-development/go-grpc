@@ -10,8 +10,8 @@ message Request {
     string context = 3;
     string message = 4;
     string status = 5;
-    string created_at = 6;
-    string updated_at = 7;
+    int64 created = 6;
+    int64 updated = 7;
 }
 
 message Response {
@@ -20,8 +20,8 @@ message Response {
     string context = 3;
     string message = 4;
     string status = 5;
-    string created_at = 6;
-    string updated_at = 7;
+    int64 created = 6;
+    int64 updated = 7;
 }
 
 message Responses {
@@ -34,4 +34,5 @@ service AddService {
     rpc GetInspires(Request) returns (Responses);
     rpc UpdateInspire(Request) returns (Response);
     rpc GetLastInspire(Request) returns (Response);
+    rpc DeleteInspire(Request) returns (Response);
 }
