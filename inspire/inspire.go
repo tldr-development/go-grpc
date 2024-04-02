@@ -92,6 +92,22 @@ func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*pro
 	return response, nil
 }
 
+// 특정 시간 이후의 inspire last를 조회해서 inspire를 생성한다.
+func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+
+	query := datastore.NewQuery(kind).FilterField("Created", ">", request.GetCreated()).Order("Created")
+	inspires := []inspire_struct.Inspire{}
+	dbClient.GetAll(context.Background(), query, &inspires)
+
+	for _, inspire := range inspires {
+		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
+	}
+
+	return &proto.Response{}, nil
+}
+
 // 내 inspire를 삭제
 func (s *server) DeleteInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
