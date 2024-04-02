@@ -24,6 +24,7 @@ type AddServiceClient interface {
 	UpdateInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetLastInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	DeleteInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GenerateInspireAfterCreatedLastInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -88,6 +89,15 @@ func (c *addServiceClient) DeleteInspire(ctx context.Context, in *Request, opts 
 	return out, nil
 }
 
+func (c *addServiceClient) GenerateInspireAfterCreatedLastInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/GenerateInspireAfterCreatedLastInspire", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AddServiceServer is the server API for AddService service.
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
@@ -98,6 +108,7 @@ type AddServiceServer interface {
 	UpdateInspire(context.Context, *Request) (*Response, error)
 	GetLastInspire(context.Context, *Request) (*Response, error)
 	DeleteInspire(context.Context, *Request) (*Response, error)
+	GenerateInspireAfterCreatedLastInspire(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -122,6 +133,9 @@ func (UnimplementedAddServiceServer) GetLastInspire(context.Context, *Request) (
 }
 func (UnimplementedAddServiceServer) DeleteInspire(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteInspire not implemented")
+}
+func (UnimplementedAddServiceServer) GenerateInspireAfterCreatedLastInspire(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateInspireAfterCreatedLastInspire not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -244,6 +258,24 @@ func _AddService_DeleteInspire_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AddService_GenerateInspireAfterCreatedLastInspire_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GenerateInspireAfterCreatedLastInspire(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/inspire.AddService/GenerateInspireAfterCreatedLastInspire",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GenerateInspireAfterCreatedLastInspire(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AddService_ServiceDesc is the grpc.ServiceDesc for AddService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +306,10 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteInspire",
 			Handler:    _AddService_DeleteInspire_Handler,
+		},
+		{
+			MethodName: "GenerateInspireAfterCreatedLastInspire",
+			Handler:    _AddService_GenerateInspireAfterCreatedLastInspire_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
