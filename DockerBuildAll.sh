@@ -1,8 +1,8 @@
 #!/bin/bash
 
 TAG_BASE=${TAG_BASE}
-VERSION=1.0.14
-TARGETS=(account apns inspire)
+VERSION=1.0.15
+TARGETS=(inspire)
 
 for TARGET in "${TARGETS[@]}"; do
 cat << EOF > Dockerfile
