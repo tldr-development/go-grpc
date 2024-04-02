@@ -141,13 +141,6 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 
 	wg := sync.WaitGroup{}
 
-	apns_grpc, err := grpc.Dial(apns_server, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Failed to dial bufnet: %v", err)
-	}
-
-	apns_conn := apns_proto.NewAddServiceClient(apns_grpc)
-
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -155,7 +148,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(apns_conn, inspire, &wg)
+		go invokeNotification(inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
 		inspire.Updated = int64(time.Now().Unix())
@@ -182,13 +175,6 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 
 	wg := sync.WaitGroup{}
 
-	apns_grpc, err := grpc.Dial(apns_server, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Failed to dial bufnet: %v", err)
-	}
-
-	apns_conn := apns_proto.NewAddServiceClient(apns_grpc)
-
 	for _, inspire := range inspires {
 		if inspire.NameKey == "" {
 			log.Print("continue")
@@ -196,7 +182,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 		}
 		// request to notification grpc server
 		wg.Add(1)
-		go invokeNotification(apns_conn, inspire, &wg)
+		go invokeNotification(inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
 		inspire.Updated = int64(time.Now().Unix())
@@ -297,9 +283,16 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 	return inspire.NameKey
 }
 
-func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
+func invokeNotification(inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
+	conn, err := grpc.Dial(apns_server, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to dial: %v", err)
+	}
+
 	ctx := context.Background()
-	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
+	c := apns_proto.NewAddServiceClient(conn)
+
+	_, err = c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
