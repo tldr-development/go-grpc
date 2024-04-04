@@ -98,7 +98,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
 
-	query := datastore.NewQuery(kind).FilterField("Created", ">", request.GetCreated())
+	query := datastore.NewQuery(kind).FilterField("Created", "<", request.GetCreated())
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
