@@ -36,4 +36,5 @@ service AddService {
     rpc GetLastInspire(Request) returns (Response);
     rpc DeleteInspire(Request) returns (Response);
     rpc GenerateInspireAfterCreatedLast(Request) returns (Response);
+    rpc SendNotification(Request) returns (Response);
 }
