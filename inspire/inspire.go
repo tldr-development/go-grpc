@@ -299,7 +299,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 
 func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
 	ctx := context.Background()
-	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "Inspire", Subtitle: "subtitle", Body: inspire.Message})
+	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "인스파이어", Subtitle: inspire.Prompt, Body: inspire.Message})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
