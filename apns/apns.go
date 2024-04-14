@@ -59,7 +59,7 @@ func (s *server) SetToken(_ context.Context, request *proto.Request) (*proto.Res
 	apnsToken := request.GetToken()
 
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "apns")
+	kind := datastore.GetKindByPrefix(getKind(), "apns")
 
 	_apns := &Apns{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), _apns)
@@ -82,7 +82,7 @@ func (s *server) GetToken(_ context.Context, request *proto.Request) (*proto.Res
 	accountUUID := request.GetUuid()
 
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "apns")
+	kind := datastore.GetKindByPrefix(getKind(), "apns")
 
 	_apns := &Apns{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), _apns)
@@ -104,7 +104,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 	}
 
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "apns")
+	kind := datastore.GetKindByPrefix(getKind(), "apns")
 
 	_apns := &Apns{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), _apns)
@@ -156,4 +156,8 @@ func notification(apnsTokens []string, title string, subtitle string, body strin
 		}
 		print(resp.Timestamp)
 	}
+}
+
+func getKind() string {
+	return app + ":" + env
 }

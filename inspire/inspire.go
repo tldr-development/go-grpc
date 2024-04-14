@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -63,7 +64,7 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 // 내 inspire 목록을 조회
 func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.Responses, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire")
 
 	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete")
 	inspires := []inspire_struct.Inspire{}
@@ -82,7 +83,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 // 내 마지막 inspire를 조회
 func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire_last")
 
 	inspire := &inspire_struct.Inspire{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
@@ -96,14 +97,36 @@ func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*pro
 // 특정 시간 이후의 inspire last를 조회해서 inspire를 생성한다.
 func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire_last")
 
-	query := datastore.NewQuery(kind).FilterField("Created", "<", request.GetCreated())
+	query := datastore.NewQuery(kind).FilterField("Created", "<", request.GetCreated()).Limit(10000)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
 	for _, inspire := range inspires {
-		// todo 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
+		// 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
+		info := getInspireInfo(inspire.UUID)
+		if info.Status == "inactive" {
+			continue
+		}
+		if info.Status == "blocked" {
+			continue
+		}
+		// info에서 주기를 확인, period is second
+		if info.NotiPeriod == "" {
+			info.NotiPeriod = "0"
+		}
+		period, _ := strconv.Atoi(info.NotiPeriod)
+		created := inspire.Created + int64(period)
+		if created > int64(time.Now().Unix()) {
+			continue
+		}
+
+		inspire.Context = "Last Context : " + inspire.Context + "\n" +
+			"User Custom Context : " + info.UserContext + "\n" +
+			"Last Message : " + info.LastMessage + "\n" +
+			"Now Context : " + info.Context
+
 		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
 	}
 
@@ -113,7 +136,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 // 내 inspire를 삭제
 func (s *server) DeleteInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire")
 
 	inspire := &inspire_struct.Inspire{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
@@ -135,7 +158,7 @@ func (s *server) DeleteInspire(_ context.Context, request *proto.Request) (*prot
 // SendNotification 특정 유저의 inspire를 조회하여 pending 상태만 notification을 보낸다.
 func (s *server) SendNotification(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire")
 
 	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending")
 	inspires := []inspire_struct.Inspire{}
@@ -176,7 +199,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	// pendding 상태의 inspire를 조회하여 notification을 보낸다.
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire")
 
 	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending")
 	inspires := []inspire_struct.Inspire{}
@@ -214,6 +237,53 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	return &proto.Response{}, nil
 }
 
+// GetInspireInfo 특정 유저의 inspire 정보를 조회한다.
+func (s *server) GetInspireInfo(_ context.Context, request *proto.RequestInfo) (*proto.ResponseInfo, error) {
+	info := getInspireInfo(request.GetUuid())
+
+	// return inspire info to client
+	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, LastMessage: info.LastMessage, Updated: info.Updated}, nil
+}
+
+// getinspireinfo 특정 유저의 inspire 정보를 조회한다.
+func getInspireInfo(uuid string) inspire_struct.Info {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(getKind(), "info")
+
+	info := &inspire_struct.Info{}
+	dbClient.Get(context.Background(), datastore.NameKey(kind, uuid, nil), info)
+
+	return *info
+}
+
+// UpdateInspireInfo 특정 유저의 inspire 정보를 업데이트한다.
+func (s *server) UpdateInspireInfo(_ context.Context, request *proto.RequestInfo) (*proto.ResponseInfo, error) {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(getKind(), "info")
+
+	info := &inspire_struct.Info{}
+	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), info)
+
+	info.Status = request.GetStatus()
+	info.NotiPeriod = request.GetNotiPeriod()
+	info.MessageLengthType = request.GetMessageLengthType()
+	info.MessageType = request.GetMessageType()
+	info.Context = request.GetContext()
+	info.UserContext = request.GetUserContext()
+	info.LastMessage = request.GetLastMessage()
+	info.Updated = int64(time.Now().Unix())
+
+	_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), info)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+	}
+
+	log.Printf("info: %v", info)
+
+	// return inspire info to client
+	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, LastMessage: info.LastMessage, Updated: info.Updated}, nil
+}
+
 func generateByGemini(prompt, gen_context, _uuid string) []string {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
@@ -246,7 +316,7 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 // set last inspire
 func setLastInspire(_uuid, prompt, gen_context, message string) string {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire_last")
 
 	inspire := &inspire_struct.Inspire{}
 	inspire.UUID = _uuid
@@ -278,7 +348,7 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 
 func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire")
+	kind := datastore.GetKindByPrefix(getKind(), "inspire")
 
 	inspire := &inspire_struct.Inspire{}
 	inspire.UUID = _uuid
@@ -305,4 +375,8 @@ func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.In
 		log.Fatalf("could not greet: %v", err)
 	}
 	wg.Done()
+}
+
+func getKind() string {
+	return app + ":" + env
 }
