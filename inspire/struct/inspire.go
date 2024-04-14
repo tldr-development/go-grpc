@@ -21,5 +21,6 @@ type Info struct {
 	UserContext       string // user context
 	LastMessage       string // 마지막 메시지
 	Updated           int64  // updated at timestamp Status가 변경된 시간
+	Language          string // 언어
 	NameKey           string
 }

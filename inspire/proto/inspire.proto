@@ -38,7 +38,8 @@ message RequestInfo {
     string user_context = 7;
     string last_message = 8;
     int64 updated = 9;
-    string name_key = 10;
+    string language = 10;
+    string name_key = 11;
 }
 
 message ResponseInfo {
@@ -51,7 +52,8 @@ message ResponseInfo {
     string user_context = 7;
     string last_message = 8;
     int64 updated = 9;
-    string name_key = 10;
+    string language = 10;
+    string name_key = 11;
 }
 
 service AddService {
