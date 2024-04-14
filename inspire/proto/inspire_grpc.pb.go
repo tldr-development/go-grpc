@@ -26,6 +26,8 @@ type AddServiceClient interface {
 	DeleteInspire(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GenerateInspireAfterCreatedLast(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	SendNotification(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GetInspireInfo(ctx context.Context, in *RequestInfo, opts ...grpc.CallOption) (*ResponseInfo, error)
+	UpdateInspireInfo(ctx context.Context, in *RequestInfo, opts ...grpc.CallOption) (*ResponseInfo, error)
 }
 
 type addServiceClient struct {
@@ -108,6 +110,24 @@ func (c *addServiceClient) SendNotification(ctx context.Context, in *Request, op
 	return out, nil
 }
 
+func (c *addServiceClient) GetInspireInfo(ctx context.Context, in *RequestInfo, opts ...grpc.CallOption) (*ResponseInfo, error) {
+	out := new(ResponseInfo)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/GetInspireInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) UpdateInspireInfo(ctx context.Context, in *RequestInfo, opts ...grpc.CallOption) (*ResponseInfo, error) {
+	out := new(ResponseInfo)
+	err := c.cc.Invoke(ctx, "/inspire.AddService/UpdateInspireInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AddServiceServer is the server API for AddService service.
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
@@ -120,6 +140,8 @@ type AddServiceServer interface {
 	DeleteInspire(context.Context, *Request) (*Response, error)
 	GenerateInspireAfterCreatedLast(context.Context, *Request) (*Response, error)
 	SendNotification(context.Context, *Request) (*Response, error)
+	GetInspireInfo(context.Context, *RequestInfo) (*ResponseInfo, error)
+	UpdateInspireInfo(context.Context, *RequestInfo) (*ResponseInfo, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -150,6 +172,12 @@ func (UnimplementedAddServiceServer) GenerateInspireAfterCreatedLast(context.Con
 }
 func (UnimplementedAddServiceServer) SendNotification(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendNotification not implemented")
+}
+func (UnimplementedAddServiceServer) GetInspireInfo(context.Context, *RequestInfo) (*ResponseInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInspireInfo not implemented")
+}
+func (UnimplementedAddServiceServer) UpdateInspireInfo(context.Context, *RequestInfo) (*ResponseInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInspireInfo not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -308,6 +336,42 @@ func _AddService_SendNotification_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AddService_GetInspireInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GetInspireInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/inspire.AddService/GetInspireInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GetInspireInfo(ctx, req.(*RequestInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_UpdateInspireInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).UpdateInspireInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/inspire.AddService/UpdateInspireInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).UpdateInspireInfo(ctx, req.(*RequestInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AddService_ServiceDesc is the grpc.ServiceDesc for AddService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +410,14 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendNotification",
 			Handler:    _AddService_SendNotification_Handler,
+		},
+		{
+			MethodName: "GetInspireInfo",
+			Handler:    _AddService_GetInspireInfo_Handler,
+		},
+		{
+			MethodName: "UpdateInspireInfo",
+			Handler:    _AddService_UpdateInspireInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
