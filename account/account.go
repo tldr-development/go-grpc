@@ -47,7 +47,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	accountUUID := request.GetUuid()
 
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(getKind(), "account")
+	kind := datastore.GetKindByPrefix(app+env, "account")
 
 	if accountUUID != "" {
 		log.Printf("account_uuid: %s", accountUUID)
@@ -77,8 +77,4 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 
 	log.Printf("newAccount: %v", newAccount)
 	return &proto.Response{Uuid: newAccount.UUID, Status: newAccount.Status, Created: newAccount.Created, Updated: newAccount.Updated}, nil
-}
-
-func getKind() string {
-	return app + ":" + env
 }
