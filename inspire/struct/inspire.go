@@ -15,8 +15,8 @@ type Info struct {
 	UUID              string // account uuid
 	Status            string // 상태 0: active, 1: inactive, 2: deleted, 3: pending, 4: blocked
 	NotiPeriod        string // 알림 주기
-	MessageLengthType string // 메시지 길이 타입 0: short, 1: middle, 2: long
-	MessageType       string // 메시지 타입 0: 상담사, 1: 친구, 2: 편지, 3: 일기, 4: 기타
+	MessageLengthType string // 메시지 길이 타입 short, middle, long
+	MessageType       string // 메시지 타입 counselor, friend, family, lover
 	Context           string // context
 	UserContext       string // user context
 	LastMessage       string // 마지막 메시지
