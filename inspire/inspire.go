@@ -60,14 +60,7 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 
 	// info가 없으면 초기화
 	if info.UUID == "" {
-		info.UUID = _uuid
-		info.Status = "active"
-		info.NotiPeriod = "0"
-		info.MessageLengthType = "short"
-		info.MessageType = "counselor"
-		info.Updated = int64(time.Now().Unix())
-		info.Language = "korean"
-		info.NameKey = _uuid
+		info = initInspireInfo(_uuid)
 		updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
 	}
 
@@ -81,10 +74,31 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	inspire := inspire_struct.Inspire{}
 	gen_context := getContext(inspire.UUID)
 	// inspire 생성
-	prompt = "When my current status is " + prompt + "please combine the information and answer me"
 	generateByGemini(prompt, gen_context, _uuid)
 
+	// invoke notification
+	c := apns_proto.NewAddServiceClient(nil)
+	wg := sync.WaitGroup{}
+
+	go invokeNotification(c, inspire, &wg)
+
 	return &proto.Response{}, nil
+}
+
+func initInspireInfo(uuid string) inspire_struct.Info {
+	return inspire_struct.Info{
+		UUID:              uuid,
+		Status:            "active",
+		NotiPeriod:        "0",
+		MessageLengthType: "short",
+		MessageType:       "counselor",
+		Context:           "",
+		UserContext:       "",
+		LastMessage:       "",
+		Updated:           int64(time.Now().Unix()),
+		Language:          "korean",
+		NameKey:           "",
+	}
 }
 
 // 내 inspire 목록을 조회
@@ -135,17 +149,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 
 		// info가 없으면 초기화
 		if info.UUID == "" {
-			info.UUID = inspire.UUID
-			info.Status = "active"
-			info.NotiPeriod = "0"
-			info.MessageLengthType = "short"
-			info.MessageType = "counselor"
-			info.Context = inspire.Context
-			info.UserContext = inspire.Context
-			info.LastMessage = inspire.Message
-			info.Updated = int64(time.Now().Unix())
-			info.Language = "korean"
-			info.NameKey = inspire.UUID
+			info = initInspireInfo(inspire.UUID)
 			go updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
 		}
 
@@ -163,8 +167,6 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 		}
 
 		inspire.Context = getContext(inspire.UUID)
-		// inspire 생성
-		inspire.Prompt = "When my current status is " + inspire.Prompt + "please combine the information and answer me"
 		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
 	}
 
@@ -179,8 +181,8 @@ func getContext(_uuid string) string {
 	dbClient.Get(context.Background(), datastore.NameKey(kind, _uuid, nil), info)
 
 	info.Context = "User Custom Context : " + info.UserContext + "\n" +
+		"Context : " + info.Context + "\n" +
 		"Last Message : " + info.LastMessage + "\n" +
-		"Last Context : " + info.Context + "\n" +
 		"Language : " + info.Language + "\n" +
 		"Message Type : " + info.MessageType + "\n" +
 		"Message Length Type : " + info.MessageLengthType + "\n"
@@ -385,16 +387,16 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 	for _, part := range parts {
 		fmt.Println(part + "\n")
 		inspireLastNameKey = setInpireDatastore(_uuid, prompt, gen_context, part)
-		// set inspire info
-		info := getInspireInfo(_uuid)
-		info.LastMessage = part
-		info.Context = gen_context
-		info.Updated = int64(time.Now().Unix())
-		go updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
-
 	}
 	if inspireLastNameKey != "" {
+		// set last inspire
 		setLastInspire(_uuid, prompt, gen_context, parts[len(parts)-1])
+
+		// set inspire info
+		info := getInspireInfo(_uuid)
+		info.LastMessage = parts[len(parts)-1]
+		info.Updated = int64(time.Now().Unix())
+		go updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
 	}
 	return parts
 }
@@ -456,7 +458,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 
 func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.Inspire, wg *sync.WaitGroup) {
 	ctx := context.Background()
-	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "인스파이어", Subtitle: inspire.Prompt, Body: inspire.Message})
+	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "", Subtitle: inspire.Prompt, Body: inspire.Message})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

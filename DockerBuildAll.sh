@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TAG_BASE=${TAG_BASE}
-VERSION=1.0.24
+VERSION=1.0.27
 TARGETS=(account apns inspire)
 
 for TARGET in "${TARGETS[@]}"; do
