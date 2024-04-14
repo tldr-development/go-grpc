@@ -103,6 +103,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	dbClient.GetAll(context.Background(), query, &inspires)
 
 	for _, inspire := range inspires {
+		// todo 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
 		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
 	}
 

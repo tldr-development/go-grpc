@@ -28,6 +28,32 @@ message Responses {
     repeated Response responses = 1;
 }
 
+message RequestInfo {
+    string uuid = 1;
+    string status = 2;
+    string noti_period = 3;
+    string message_length_type = 4;
+    string message_type = 5;
+    string context = 6;
+    string user_context = 7;
+    string last_message = 8;
+    int64 updated = 9;
+    string name_key = 10;
+}
+
+message ResponseInfo {
+    string uuid = 1;
+    string status = 2;
+    string noti_period = 3;
+    string message_length_type = 4;
+    string message_type = 5;
+    string context = 6;
+    string user_context = 7;
+    string last_message = 8;
+    int64 updated = 9;
+    string name_key = 10;
+}
+
 service AddService {
     rpc Inspire(Request) returns (Response);
     rpc SendNotifications(Request) returns (Response);
