@@ -53,6 +53,7 @@ func main() {
 
 func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	prompt := request.GetPrompt()
+	gen_context := request.GetContext()
 	_uuid := request.GetUuid()
 
 	// 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
@@ -79,7 +80,8 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	}
 
 	inspire := inspire_struct.Inspire{}
-	gen_context := getContext(inspire.UUID)
+	inspire.Context = gen_context
+	gen_context = getContext(inspire, inspire.UUID)
 	// inspire 생성
 	prompt = "When my current status is " + prompt + "please combine the information and answer me"
 	generateByGemini(prompt, gen_context, _uuid)
@@ -162,7 +164,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			continue
 		}
 
-		inspire.Context = getContext(inspire.UUID)
+		inspire.Context = getContext(inspire, inspire.UUID)
 		// inspire 생성
 		inspire.Prompt = "When my current status is " + inspire.Prompt + "please combine the information and answer me"
 		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
@@ -171,16 +173,17 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	return &proto.Response{}, nil
 }
 
-func getContext(_uuid string) string {
+func getContext(inspire inspire_struct.Inspire, _uuid string) string {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(getKind(), "info")
 
 	info := &inspire_struct.Info{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, _uuid, nil), info)
 
-	info.Context = "User Custom Context : " + info.UserContext + "\n" +
+	info.Context = "Last Context : " + inspire.Context + "\n" +
+		"User Custom Context : " + info.UserContext + "\n" +
 		"Last Message : " + info.LastMessage + "\n" +
-		"Last Context : " + info.Context + "\n" +
+		"Now Context : " + info.Context + "\n" +
 		"Language : " + info.Language + "\n" +
 		"Message Type : " + info.MessageType + "\n" +
 		"Message Length Type : " + info.MessageLengthType + "\n"
@@ -385,13 +388,6 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 	for _, part := range parts {
 		fmt.Println(part + "\n")
 		inspireLastNameKey = setInpireDatastore(_uuid, prompt, gen_context, part)
-		// set inspire info
-		info := getInspireInfo(_uuid)
-		info.LastMessage = part
-		info.Context = gen_context
-		info.Updated = int64(time.Now().Unix())
-		go updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
-
 	}
 	if inspireLastNameKey != "" {
 		setLastInspire(_uuid, prompt, gen_context, parts[len(parts)-1])
