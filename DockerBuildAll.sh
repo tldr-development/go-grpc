@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TAG_BASE=${TAG_BASE}
-VERSION=1.0.24
+VERSION=1.0.20
 TARGETS=(account apns inspire)
 
 for TARGET in "${TARGETS[@]}"; do
@@ -24,7 +24,7 @@ ENTRYPOINT ["./app"]
 
 EOF
         echo "Building $TAG_BASE$TARGET:$VERSION"
-        # docker build -t $TAG_BASE$TARGET:$VERSION -f Dockerfile .
+        docker build -t $TAG_BASE$TARGET:$VERSION -f Dockerfile .
         # push to gcr
         gcloud builds submit . --tag $TAG_BASE$TARGET:$VERSION
         rm Dockerfile
