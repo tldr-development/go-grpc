@@ -56,34 +56,6 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	gen_context := request.GetContext()
 	_uuid := request.GetUuid()
 
-	// 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
-	info := getInspireInfo(_uuid)
-
-	// info가 없으면 초기화
-	if info.UUID == "" {
-		info.UUID = _uuid
-		info.Status = "active"
-		info.NotiPeriod = "0"
-		info.MessageLengthType = "short"
-		info.MessageType = "counselor"
-		info.Updated = int64(time.Now().Unix())
-		info.Language = "korean"
-		info.NameKey = _uuid
-		updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
-	}
-
-	if info.Status == "inactive" {
-		return &proto.Response{}, nil
-	}
-	if info.Status == "blocked" {
-		return &proto.Response{}, nil
-	}
-
-	inspire := inspire_struct.Inspire{}
-	inspire.Context = gen_context
-	gen_context = getContext(inspire, inspire.UUID)
-	// inspire 생성
-	prompt = "When my current status is " + prompt + "please combine the information and answer me"
 	generateByGemini(prompt, gen_context, _uuid)
 
 	return &proto.Response{}, nil
@@ -134,23 +106,6 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	for _, inspire := range inspires {
 		// 유저 정보에서 유저가 얼마 주기로 inspire를 받아야 하는지 조회
 		info := getInspireInfo(inspire.UUID)
-
-		// info가 없으면 초기화
-		if info.UUID == "" {
-			info.UUID = inspire.UUID
-			info.Status = "active"
-			info.NotiPeriod = "0"
-			info.MessageLengthType = "short"
-			info.MessageType = "counselor"
-			info.Context = inspire.Context
-			info.UserContext = inspire.Context
-			info.LastMessage = inspire.Message
-			info.Updated = int64(time.Now().Unix())
-			info.Language = "korean"
-			info.NameKey = inspire.UUID
-			go updateInspireInfo(info.UUID, info.Status, info.NotiPeriod, info.MessageLengthType, info.MessageType, info.Context, info.UserContext, info.LastMessage, info.Updated)
-		}
-
 		if info.Status == "inactive" {
 			continue
 		}
@@ -158,37 +113,24 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			continue
 		}
 		// info에서 주기를 확인, period is second
+		if info.NotiPeriod == "" {
+			info.NotiPeriod = "0"
+		}
 		period, _ := strconv.Atoi(info.NotiPeriod)
 		created := inspire.Created + int64(period)
 		if created > int64(time.Now().Unix()) {
 			continue
 		}
 
-		inspire.Context = getContext(inspire, inspire.UUID)
-		// inspire 생성
-		inspire.Prompt = "When my current status is " + inspire.Prompt + "please combine the information and answer me"
+		inspire.Context = "Last Context : " + inspire.Context + "\n" +
+			"User Custom Context : " + info.UserContext + "\n" +
+			"Last Message : " + info.LastMessage + "\n" +
+			"Now Context : " + info.Context
+
 		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
 	}
 
 	return &proto.Response{}, nil
-}
-
-func getContext(inspire inspire_struct.Inspire, _uuid string) string {
-	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(getKind(), "info")
-
-	info := &inspire_struct.Info{}
-	dbClient.Get(context.Background(), datastore.NameKey(kind, _uuid, nil), info)
-
-	info.Context = "Last Context : " + inspire.Context + "\n" +
-		"User Custom Context : " + info.UserContext + "\n" +
-		"Last Message : " + info.LastMessage + "\n" +
-		"Now Context : " + info.Context + "\n" +
-		"Language : " + info.Language + "\n" +
-		"Message Type : " + info.MessageType + "\n" +
-		"Message Length Type : " + info.MessageLengthType + "\n"
-
-	return info.Context
 }
 
 // 내 inspire를 삭제
@@ -340,30 +282,6 @@ func (s *server) UpdateInspireInfo(_ context.Context, request *proto.RequestInfo
 
 	// return inspire info to client
 	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, LastMessage: info.LastMessage, Updated: info.Updated}, nil
-}
-
-func updateInspireInfo(uuid string, status string, noti_period string, message_length_type string, message_type string, _context string, user_context string, last_message string, updated int64) {
-	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(getKind(), "info")
-
-	info := &inspire_struct.Info{}
-	dbClient.Get(context.Background(), datastore.NameKey(kind, uuid, nil), info)
-
-	info.Status = status
-	info.NotiPeriod = noti_period
-	info.MessageLengthType = message_length_type
-	info.MessageType = message_type
-	info.Context = _context
-	info.UserContext = user_context
-	info.LastMessage = last_message
-	info.Updated = updated
-
-	_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, uuid, nil), info)
-	if err != nil {
-		log.Printf("Failed to put: %v", err)
-	}
-
-	log.Printf("info: %v", info)
 }
 
 func generateByGemini(prompt, gen_context, _uuid string) []string {
