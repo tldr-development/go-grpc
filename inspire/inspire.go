@@ -269,7 +269,7 @@ func (s *server) GetInspireInfo(_ context.Context, request *proto.RequestInfo) (
 	info := getInspireInfo(request.GetUuid())
 
 	// return inspire info to client
-	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, LastMessage: info.LastMessage, Updated: info.Updated}, nil
+	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, Updated: info.Updated}, nil
 }
 
 // getinspireinfo 특정 유저의 inspire 정보를 조회한다.
@@ -307,7 +307,7 @@ func (s *server) UpdateInspireInfo(_ context.Context, request *proto.RequestInfo
 	log.Printf("info: %v", info)
 
 	// return inspire info to client
-	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, LastMessage: info.LastMessage, Updated: info.Updated}, nil
+	return &proto.ResponseInfo{Uuid: info.UUID, Status: info.Status, NotiPeriod: info.NotiPeriod, MessageLengthType: info.MessageLengthType, MessageType: info.MessageType, Context: info.Context, UserContext: info.UserContext, Updated: info.Updated}, nil
 }
 
 func generateByGemini(prompt, gen_context, _uuid string) []string {
