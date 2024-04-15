@@ -7,7 +7,6 @@ Go과 gRPC를 GCP에서 간단하게 서비스 하기 위한 프레임워크 구
 - Dockerfile의 빌드 대상 경로만 수정하여 복수의 서비스를 빌드
 
 # 기술 스택 Stack
-- fiber
 - gRPC
 - Github action
 - GCP Cloud Build
