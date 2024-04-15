@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package apns;
+
+option go_package = "github.com/hojin-kr/fiber-grpc/apns/proto;apns/proto";
+
+message Request {
+    string uuid = 1;
+    string token = 2;
+    string title = 3;
+    string subtitle = 4;
+    string body = 5;
+}
+
+message Response {
+    string uuid = 1;
+    string token = 2;
+}
+
+service AddService {
+    rpc SetToken(Request) returns (Response);
+    rpc GetToken(Request) returns (Response);
+    rpc SendNotification(Request) returns (Response);
+}
