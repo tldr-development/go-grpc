@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package account;
 
-option go_package = "github.com/hojin-kr/fiber-grpc/account/proto;account/proto";
+option go_package = "github.com/hojin-kr/go-grpc/account/proto;account/proto";
 
 message Request {
     string uuid = 1;

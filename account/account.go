@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	proto "github.com/hojin-kr/fiber-grpc/account/proto"
-	account "github.com/hojin-kr/fiber-grpc/account/struct"
-	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
+	proto "github.com/hojin-kr/go-grpc/account/proto"
+	account "github.com/hojin-kr/go-grpc/account/struct"
+	"github.com/hojin-kr/go-grpc/gcp/datastore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

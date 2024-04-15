@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	proto "github.com/hojin-kr/fiber-grpc/apns/proto"
+	proto "github.com/hojin-kr/go-grpc/apns/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )

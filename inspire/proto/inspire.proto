@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package inspire;
 
-option go_package = "github.com/hojin-kr/fiber-grpc/inspire/proto;inspire/proto";
+option go_package = "github.com/hojin-kr/go-grpc/inspire/proto;inspire/proto";
 
 message Request {
     string uuid = 1;

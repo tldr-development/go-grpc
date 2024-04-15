@@ -8,10 +8,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/hojin-kr/fiber-grpc/gcp/cloudstorage"
-	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
-	proto "github.com/hojin-kr/fiber-grpc/sample/proto"
-	entity "github.com/hojin-kr/fiber-grpc/sample/struct"
+	"github.com/hojin-kr/go-grpc/gcp/cloudstorage"
+	"github.com/hojin-kr/go-grpc/gcp/datastore"
+	proto "github.com/hojin-kr/go-grpc/sample/proto"
+	entity "github.com/hojin-kr/go-grpc/sample/struct"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
