@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sample;
 
-option go_package = "github.com/hojin-kr/fiber-grpc/sample/proto;sample/proto";
+option go_package = "github.com/hojin-kr/go-grpc/sample/proto;sample/proto";
 
 message Request {
     int64 a = 1;

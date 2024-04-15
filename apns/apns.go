@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/edganiukov/apns"
-	proto "github.com/hojin-kr/fiber-grpc/apns/proto"
-	"github.com/hojin-kr/fiber-grpc/gcp/datastore"
+	proto "github.com/hojin-kr/go-grpc/apns/proto"
+	"github.com/hojin-kr/go-grpc/gcp/datastore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

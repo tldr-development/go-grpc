@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package apns;
 
-option go_package = "github.com/hojin-kr/fiber-grpc/apns/proto;apns/proto";
+option go_package = "github.com/hojin-kr/go-grpc/apns/proto;apns/proto";
 
 message Request {
     string uuid = 1;
