@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net"
 	"testing"
 
@@ -111,4 +112,31 @@ func TestGetLastInspire(t *testing.T) {
 	if res == nil {
 		t.Fatalf("Expected response, got %v", res)
 	}
+	log.Println("GetLastInspire:")
+	log.Println(res)
+}
+
+// GenerateInspireAfterCreatedLast
+func TestGenerateInspireAfterCreatedLast(t *testing.T) {
+	log.Println("GenerateInspireAfterCreatedLast:")
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{
+		Created: 29138208066,
+	}
+	res, err := client.GenerateInspireAfterCreatedLast(ctx, req)
+	if err != nil {
+		t.Fatalf("GenerateInspireAfterCreatedLast failed: %v", err)
+	}
+	if res == nil {
+		t.Fatalf("Expected response, got %v", res)
+	}
+	log.Println("GenerateInspireAfterCreatedLast:")
+	log.Println(res)
 }

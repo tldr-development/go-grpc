@@ -65,7 +65,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete")
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -81,11 +81,11 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 
 // 내 마지막 inspire를 조회
 func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*proto.Response, error) {
-	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
-
-	inspire := &inspire_struct.Inspire{}
-	dbClient.Get(context.Background(), datastore.NameKey(kind, request.GetUuid(), nil), inspire)
+	inspires := getLastInspire(request.GetUuid())
+	inspire := inspire_struct.Inspire{}
+	for _, inspire = range inspires {
+		break
+	}
 	response := &proto.Response{Uuid: inspire.UUID, Prompt: inspire.Prompt, Message: inspire.Message, Created: inspire.Created, Updated: inspire.Updated}
 	log.Printf("inspire: %v", inspire)
 
@@ -96,17 +96,30 @@ func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*pro
 // 특정 시간 이후의 inspire last를 조회해서 inspire를 생성한다.
 func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Created", "<", request.GetCreated())
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
 	for _, inspire := range inspires {
-		generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
+		go generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
+		log.Println("inspire: ", inspire)
 	}
 
 	return &proto.Response{}, nil
+}
+
+// get Last inspire by last one
+func getLastInspire(_uuid string) []inspire_struct.Inspire {
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+env, "inspire")
+
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", _uuid).FilterField("Status", "=", "complete").Order("-Created").Limit(1)
+	inspires := []inspire_struct.Inspire{}
+	dbClient.GetAll(context.Background(), query, &inspires)
+
+	return inspires
 }
 
 // 내 inspire를 삭제
@@ -177,7 +190,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending")
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending").DistinctOn("UUID")
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -231,38 +244,11 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 	parts := printResponse(resp)
 
 	// set last inspire
-	inspireLastNameKey := ""
 	for _, part := range parts {
 		fmt.Println(part + "\n")
-		inspireLastNameKey = setInpireDatastore(_uuid, prompt, gen_context, part)
-	}
-	if inspireLastNameKey != "" {
-		setLastInspire(_uuid, prompt, gen_context, parts[len(parts)-1])
+		setInpireDatastore(_uuid, prompt, gen_context, part)
 	}
 	return parts
-}
-
-// set last inspire
-func setLastInspire(_uuid, prompt, gen_context, message string) string {
-	dbClient := datastore.GetClient(context.Background())
-	kind := datastore.GetKindByPrefix(app+env, "inspire_last")
-
-	inspire := &inspire_struct.Inspire{}
-	inspire.UUID = _uuid
-	inspire.Prompt = prompt
-	inspire.Context = gen_context
-	inspire.Message = message
-	inspire.Created = int64(time.Now().Unix())
-	inspire.Status = "pending"
-	inspire.NameKey = uuid.New().String()
-
-	UUID := datastore.NameKey(kind, inspire.UUID, nil)
-	_, err := dbClient.Put(context.Background(), UUID, inspire)
-	if err != nil {
-		log.Printf("Failed to put: %v", err)
-	}
-	log.Printf("inspire: %v", inspire)
-	return inspire.NameKey
 }
 
 func printResponse(resp *genai.GenerateContentResponse) []string {

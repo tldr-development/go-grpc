@@ -1,0 +1,31 @@
+indexes:
+# indexing
+# gcloud datastore indexes cleanup
+# gcloud datastore indexes create
+# gcloud datastore indexes describe
+# gcloud datastore indexes list
+# query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10)
+- kind: inspiredev:inspire
+  properties:
+  - name: UUID
+  - name: Status
+  - name: Created
+    direction: desc
+
+
+- kind: inspiredev:inspire
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+
+# query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
+- kind: inspiredev:inspire
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: UUID
+    direction: asc
+  - name: Created
+    direction: desc
