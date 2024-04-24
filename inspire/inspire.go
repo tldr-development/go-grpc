@@ -65,7 +65,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(100)
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(1000)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -98,11 +98,18 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).Order("-Updated").Limit(1000)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
+	// distinct inspire by UUID
+	inspireMap := make(map[string]inspire_struct.Inspire)
+
 	for _, inspire := range inspires {
+		inspireMap[inspire.UUID] = inspire
+	}
+
+	for _, inspire := range inspireMap {
 		go generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
 		log.Println("inspire: ", inspire)
 	}
@@ -149,7 +156,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending")
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending").Limit(10)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -190,9 +197,16 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending").DistinctOn("UUID")
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending").Limit(10000)
 	inspires := []inspire_struct.Inspire{}
+
 	dbClient.GetAll(context.Background(), query, &inspires)
+
+	// distinct inspire by UUID
+	inspireMap := make(map[string]inspire_struct.Inspire)
+	for _, inspire := range inspires {
+		inspireMap[inspire.UUID] = inspire
+	}
 
 	wg := sync.WaitGroup{}
 
@@ -203,7 +217,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	}
 	c := apns_proto.NewAddServiceClient(conn)
 
-	for _, inspire := range inspires {
+	for _, inspire := range inspireMap {
 		if inspire.NameKey == "" {
 			log.Print("continue")
 			continue
