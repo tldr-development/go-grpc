@@ -65,7 +65,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10)
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(100)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 

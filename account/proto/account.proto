@@ -19,4 +19,9 @@ message Response {
 
 service AddService {
     rpc Init(Request) returns (Response);
+    rpc Add(Request) returns (Response);
+    rpc Get(Request) returns (Response);
+    rpc Update(Request) returns (Response);
+    rpc Delete(Request) returns (Response);
+    rpc List(Request) returns (Response);
 }

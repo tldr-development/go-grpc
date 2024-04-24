@@ -120,7 +120,7 @@ func notification(apnsTokens []string, title string, subtitle string, body strin
 		ProductionGateway  = "https://api.push.apple.com"
 	)
 	GateWay := DevelopmentGateway
-	if env == "production" {
+	if env == "prod" {
 		GateWay = ProductionGateway
 	}
 	_apple_apns_key, _ := b64.StdEncoding.DecodeString(apple_apns_key)
