@@ -5,14 +5,14 @@ indexes:
 # gcloud datastore indexes describe
 # gcloud datastore indexes list
 # query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10)
-- kind: inspiredev:inspire
+- kind: inspire:dev:inspire
   properties:
   - name: UUID
   - name: Status
   - name: Created
     direction: desc
 
-- kind: inspireproduction:inspire
+- kind: inspire:production:inspire
   properties:
   - name: UUID
   - name: Status
@@ -20,20 +20,20 @@ indexes:
     direction: desc
 
 
-- kind: inspiredev:inspire
+- kind: inspire:dev:inspire
   properties:
   - name: Status
   - name: Updated
     direction: desc
 
-- kind: inspireproduction:inspire
+- kind: inspire:production:inspire
   properties:
   - name: Status
   - name: Updated
     direction: desc
 
 # query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
-- kind: inspiredev:inspire
+- kind: inspire:dev:inspire
   properties:
   - name: Status
   - name: Updated
@@ -43,7 +43,7 @@ indexes:
   - name: Created
     direction: desc
 
-- kind: inspireproduction:inspire
+- kind: inspire:production:inspire
   properties:
   - name: Status
   - name: Updated
