@@ -99,7 +99,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", ">", request.GetCreated()).Order("-Updated").Limit(1000)
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", ">", request.GetCreated()).Order("-Updated").FilterField("Context", "!=", "auto")
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -107,9 +107,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	inspireMap := make(map[string]inspire_struct.Inspire)
 
 	for _, inspire := range inspires {
-		if inspire.Context == "auto" {
-			continue
-		}
+		log.Println(inspire.Context)
 		if inspireMap[inspire.UUID].Created < inspire.Created {
 			inspireMap[inspire.UUID] = inspire
 		}
@@ -125,7 +123,8 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
-			genMessage := generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID, true)
+			genMessage := "test"
+			// genMessage := generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID, true)
 			log.Println(inspire.Prompt, global_context, genMessage)
 			// check if message is empty
 			if len(genMessage) == 0 {
@@ -134,7 +133,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			promptMessageMap[inspire.Prompt] = MessageByPrompt{
 				Prompt:  inspire.Prompt,
 				Context: global_context,
-				Message: genMessage[0],
+				Message: genMessage,
 			}
 		}
 	}
@@ -145,7 +144,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			continue
 		}
 		log.Println(inspire.UUID, inspire.Prompt, promptMessageMap[inspire.Prompt].Message)
-		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
+		// go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
 	}
 
 	return &proto.Response{}, nil
