@@ -32,6 +32,18 @@ indexes:
   - name: Updated
     direction: desc
 
+- kind: inspire:dev:inspire
+  properties:
+  - name: Status
+  - name: Updated
+    direction: asc
+
+- kind: inspire:prod:inspire
+  properties:
+  - name: Status
+  - name: Updated
+    direction: asc
+
 # query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
 - kind: inspire:dev:inspire
   properties:

@@ -107,7 +107,9 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	inspireMap := make(map[string]inspire_struct.Inspire)
 
 	for _, inspire := range inspires {
-		inspireMap[inspire.UUID] = inspire
+		if inspireMap[inspire.UUID].Created < inspire.Created {
+			inspireMap[inspire.UUID] = inspire
+		}
 	}
 
 	type MessageByPrompt struct {
@@ -121,6 +123,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			genMessage := generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID, true)
+			log.Println(inspire.Prompt, global_context, genMessage)
 			// check if message is empty
 			if len(genMessage) == 0 {
 				continue
@@ -132,14 +135,14 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			}
 		}
 	}
-	log.Println("GenerateInspireAfterCreatedLast", promptMessageMap, len(promptMessageMap))
 
 	// set inspire to datastore
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			continue
 		}
-		setInpireDatastore(inspire.UUID, inspire.Prompt, inspire.Context, promptMessageMap[inspire.Prompt].Message)
+		log.Println(inspire.UUID, inspire.Prompt, promptMessageMap[inspire.Prompt].Message)
+		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
 	}
 
 	return &proto.Response{}, nil
@@ -207,7 +210,11 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 		go invokeNotification(c, inspire, &wg)
 		// inspire의 status를 complete로 변경
 		inspire.Status = "complete"
-		inspire.Updated = int64(time.Now().Unix())
+		if inspire.Context == "auto" {
+			inspire.Updated = 0
+		} else {
+			inspire.Updated = int64(time.Now().Unix())
+		}
 
 		_, err := dbClient.Put(context.Background(), datastore.NameKey(kind, inspire.NameKey, nil), &inspire)
 		if err != nil {
@@ -293,7 +300,7 @@ func generateByGemini(prompt string, gen_context string, _uuid string, bypass ..
 		fmt.Println(part + "\n")
 		setInpireDatastore(_uuid, prompt, gen_context, part)
 	}
-	log.Println("generateByGemini")
+	log.Println("######## generateByGemini #########")
 	return parts
 }
 
@@ -325,7 +332,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 	if err != nil {
 		log.Printf("Failed to put: %v", err)
 	}
-	log.Printf("inspire: %v", inspire)
+	log.Printf("setInpireDatastore: %v", inspire)
 	return inspire.NameKey
 }
 
