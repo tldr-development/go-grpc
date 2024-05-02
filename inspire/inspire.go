@@ -28,7 +28,6 @@ var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
 var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
-var global_context = os.Getenv("GLOBAL_CONTEXT")
 
 const location = "us-central1"
 const model = "gemini-1.0-pro-001"
@@ -113,7 +112,6 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	inspireMap := make(map[string]inspire_struct.Inspire)
 
 	for _, inspire := range inspires {
-		log.Println(inspire.Context)
 		if inspireMap[inspire.UUID].Created < inspire.Created {
 			inspireMap[inspire.UUID] = inspire
 		}
@@ -132,7 +130,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			messages := generateByGemini(inspire.Prompt, inspire.Context)
-			log.Println(inspire.Prompt, global_context, messages)
+			log.Println(inspire.Prompt, request.Context, messages)
 			// check if message is empty
 			if len(messages) == 0 {
 				continue
@@ -140,7 +138,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			for _, message := range messages {
 				promptMessageMap[inspire.Prompt] = MessageByPrompt{
 					Prompt:  inspire.Prompt,
-					Context: global_context,
+					Context: request.Context,
 					Message: message,
 				}
 			}
