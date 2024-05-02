@@ -28,6 +28,7 @@ var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
 var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
+var global_context = os.Getenv("GLOBAL_CONTEXT")
 
 const location = "us-central1"
 const model = "gemini-1.0-pro-001"
@@ -93,12 +94,12 @@ func (s *server) GetLastInspire(_ context.Context, request *proto.Request) (*pro
 	return response, nil
 }
 
-// 특정 시간 이후의 inspire last를 조회해서 inspire를 생성한다.
+// 마지막 updated이후로 3일 이내에 생성된 inspire를 조회하여 대상자로 선정
 func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).Order("-Updated").Limit(1000)
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", ">", request.GetCreated()).Order("-Updated").Limit(1000)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -109,9 +110,36 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 		inspireMap[inspire.UUID] = inspire
 	}
 
+	type MessageByPrompt struct {
+		Prompt  string
+		Context string
+		Message string
+	}
+
+	promptMessageMap := make(map[string]MessageByPrompt)
+
 	for _, inspire := range inspireMap {
-		go generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID)
-		log.Println("inspire: ", inspire)
+		if promptMessageMap[inspire.Prompt].Message == "" {
+			genMessage := generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID, true)
+			// check if message is empty
+			if len(genMessage) == 0 {
+				continue
+			}
+			promptMessageMap[inspire.Prompt] = MessageByPrompt{
+				Prompt:  inspire.Prompt,
+				Context: global_context,
+				Message: genMessage[0],
+			}
+		}
+	}
+	log.Println("GenerateInspireAfterCreatedLast", promptMessageMap, len(promptMessageMap))
+
+	// set inspire to datastore
+	for _, inspire := range inspireMap {
+		if promptMessageMap[inspire.Prompt].Message == "" {
+			continue
+		}
+		setInpireDatastore(inspire.UUID, inspire.Prompt, inspire.Context, promptMessageMap[inspire.Prompt].Message)
 	}
 
 	return &proto.Response{}, nil
@@ -240,7 +268,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	return &proto.Response{}, nil
 }
 
-func generateByGemini(prompt, gen_context, _uuid string) []string {
+func generateByGemini(prompt string, gen_context string, _uuid string, bypass ...bool) []string {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
@@ -258,10 +286,14 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 	parts := printResponse(resp)
 
 	// set last inspire
+	if bypass != nil {
+		return parts
+	}
 	for _, part := range parts {
 		fmt.Println(part + "\n")
 		setInpireDatastore(_uuid, prompt, gen_context, part)
 	}
+	log.Println("generateByGemini")
 	return parts
 }
 
