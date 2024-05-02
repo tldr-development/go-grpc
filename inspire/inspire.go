@@ -107,6 +107,9 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	inspireMap := make(map[string]inspire_struct.Inspire)
 
 	for _, inspire := range inspires {
+		if inspire.Context == "auto" {
+			continue
+		}
 		if inspireMap[inspire.UUID].Created < inspire.Created {
 			inspireMap[inspire.UUID] = inspire
 		}
