@@ -55,8 +55,14 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	prompt := request.GetPrompt()
 	gen_context := request.GetContext()
 	_uuid := request.GetUuid()
+	messages := generateByGemini(prompt, gen_context)
 
-	generateByGemini(prompt, gen_context, _uuid)
+	if len(messages) > 0 {
+		for _, message := range messages {
+			setInpireDatastore(_uuid, prompt, gen_context, message)
+		}
+	}
+	log.Println("Inspire")
 
 	return &proto.Response{}, nil
 }
@@ -112,6 +118,8 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			inspireMap[inspire.UUID] = inspire
 		}
 	}
+	// user count log
+	log.Println("GenerateInspireAfterCreatedLast,inspireMap,", len(inspireMap))
 
 	type MessageByPrompt struct {
 		Prompt  string
@@ -123,28 +131,30 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
-			genMessage := "test"
-			// genMessage := generateByGemini(inspire.Prompt, inspire.Context, inspire.UUID, true)
-			log.Println(inspire.Prompt, global_context, genMessage)
+			messages := generateByGemini(inspire.Prompt, inspire.Context)
+			log.Println(inspire.Prompt, global_context, messages)
 			// check if message is empty
-			if len(genMessage) == 0 {
+			if len(messages) == 0 {
 				continue
 			}
-			promptMessageMap[inspire.Prompt] = MessageByPrompt{
-				Prompt:  inspire.Prompt,
-				Context: global_context,
-				Message: genMessage,
+			for _, message := range messages {
+				promptMessageMap[inspire.Prompt] = MessageByPrompt{
+					Prompt:  inspire.Prompt,
+					Context: global_context,
+					Message: message,
+				}
 			}
 		}
 	}
+	// prompt count log
+	log.Println("GenerateInspireAfterCreatedLast,promptMessageMap,", len(promptMessageMap))
 
 	// set inspire to datastore
 	for _, inspire := range inspireMap {
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			continue
 		}
-		log.Println(inspire.UUID, inspire.Prompt, promptMessageMap[inspire.Prompt].Message)
-		// go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
+		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
 	}
 
 	return &proto.Response{}, nil
@@ -277,7 +287,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	return &proto.Response{}, nil
 }
 
-func generateByGemini(prompt string, gen_context string, _uuid string, bypass ...bool) []string {
+func generateByGemini(prompt string, gen_context string) []string {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
@@ -293,16 +303,7 @@ func generateByGemini(prompt string, gen_context string, _uuid string, bypass ..
 	}
 
 	parts := printResponse(resp)
-
-	// set last inspire
-	if bypass != nil {
-		return parts
-	}
-	for _, part := range parts {
-		fmt.Println(part + "\n")
-		setInpireDatastore(_uuid, prompt, gen_context, part)
-	}
-	log.Println("######## generateByGemini #########")
+	log.Println("generateByGemini")
 	return parts
 }
 
