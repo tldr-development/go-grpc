@@ -147,13 +147,17 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 	// prompt count log
 	log.Println("GenerateInspireAfterCreatedLast,promptMessageMap,", len(promptMessageMap))
 
+	wg := sync.WaitGroup{}
+
 	// set inspire to datastore
 	for _, inspire := range inspireMap {
+		wg.Add(1)
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			continue
 		}
 		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
 	}
+	wg.Wait()
 
 	return &proto.Response{}, nil
 }
