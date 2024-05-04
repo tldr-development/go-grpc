@@ -58,7 +58,7 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 
 	if len(messages) > 0 {
 		for _, message := range messages {
-			setInpireDatastore(_uuid, prompt, gen_context, message)
+			setInpireDatastore(_uuid, prompt, gen_context, message, nil)
 		}
 	}
 	log.Println("Inspire")
@@ -155,7 +155,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			continue
 		}
 		wg.Add(1)
-		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
+		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message, &wg)
 	}
 	wg.Wait()
 
@@ -319,7 +319,7 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 	return parts
 }
 
-func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
+func setInpireDatastore(_uuid, prompt, gen_context, message string, wg *sync.WaitGroup) string {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
@@ -338,6 +338,9 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
 		log.Printf("Failed to put: %v", err)
 	}
 	log.Printf("setInpireDatastore: %v", inspire)
+	if wg != nil {
+		wg.Done()
+	}
 	return inspire.NameKey
 }
 
