@@ -151,10 +151,10 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 
 	// set inspire to datastore
 	for _, inspire := range inspireMap {
-		wg.Add(1)
 		if promptMessageMap[inspire.Prompt].Message == "" {
 			continue
 		}
+		wg.Add(1)
 		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message)
 	}
 	wg.Wait()
