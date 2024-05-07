@@ -15,6 +15,8 @@ import (
 	"github.com/hojin-kr/go-grpc/gcp/datastore"
 	proto "github.com/hojin-kr/go-grpc/inspire/proto"
 	inspire_struct "github.com/hojin-kr/go-grpc/inspire/struct"
+	wallet_proto "github.com/hojin-kr/go-grpc/wallet/proto"
+	wallet_struct "github.com/hojin-kr/go-grpc/wallet/struct"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -28,6 +30,7 @@ var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
 var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
+var wallet_server = os.Getenv("WALLET_SERVER")
 
 const location = "us-central1"
 const model = "gemini-1.0-pro-001"
@@ -54,6 +57,13 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	prompt := request.GetPrompt()
 	gen_context := request.GetContext()
 	_uuid := request.GetUuid()
+
+	// wallet ticket 감소
+	if !decrWalletTicket(_uuid) {
+		log.Println("decrWalletTicket failed")
+		return &proto.Response{}, nil
+	}
+
 	messages := generateByGemini(prompt, gen_context)
 
 	if len(messages) > 0 {
@@ -63,7 +73,7 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 	}
 	log.Println("Inspire")
 
-	return &proto.Response{}, nil
+	return &proto.Response{Uuid: _uuid, Prompt: prompt, Message: messages[0], Created: int64(time.Now().Unix()), Updated: int64(time.Now().Unix())}, nil
 }
 
 // 내 inspire 목록을 조회
@@ -351,4 +361,46 @@ func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.In
 		log.Fatalf("could not greet: %v", err)
 	}
 	wg.Done()
+}
+
+// wallet의 ticket을 조회하고 감소
+func decrWalletTicket(_uuid string) bool {
+	creds := credentials.NewClientTLSFromCert(nil, "")
+	conn, err := grpc.Dial(wallet_server, grpc.WithTransportCredentials(creds))
+
+	if err != nil {
+		log.Fatalf("Failed to dial: %v", err)
+	}
+
+	c := wallet_proto.NewAddServiceClient(conn)
+	req := &wallet_proto.Request{Uuid: _uuid}
+	res, err := c.Get(context.Background(), req)
+	if err != nil {
+		log.Fatalf("Init failed: %v", err)
+	}
+
+	_wallet := &wallet_struct.Wallet{}
+	_wallet.UUID = res.Uuid
+	_wallet.Ticket = res.Ticket
+
+	if _wallet.UUID == "" {
+		log.Println("wallet not found uuid: ", _uuid)
+		return false
+	}
+
+	if _wallet.Ticket == 0 {
+		log.Println("wallet ticket is 0 uuid: ", _uuid)
+		return false
+	}
+
+	_wallet.Ticket = _wallet.Ticket - 1
+	_wallet.Updated = int64(time.Now().Unix())
+
+	_, err = c.Update(context.Background(), &wallet_proto.Request{Uuid: _wallet.UUID, Ticket: _wallet.Ticket, Status: "active"})
+	if err != nil {
+		return false
+	}
+
+	log.Printf("decrWalletTicket uuid: %v, ticket: %v", _uuid, _wallet.Ticket)
+	return true
 }
