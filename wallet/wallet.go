@@ -59,7 +59,7 @@ func (s *server) Get(_ context.Context, request *proto.Request) (*proto.Response
 	}
 
 	log.Printf("Get uuid: %v", uuid)
-	return &proto.Response{Uuid: uuid, Status: _wallet.Status, Created: _wallet.Created, Updated: _wallet.Updated}, nil
+	return &proto.Response{Uuid: uuid, Status: _wallet.Status, Ticket: _wallet.Ticket, Created: _wallet.Created, Updated: _wallet.Updated}, nil
 }
 
 // Update
@@ -72,6 +72,14 @@ func (s *server) Update(_ context.Context, request *proto.Request) (*proto.Respo
 
 	_wallet := &wallet_struct.Wallet{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, uuid, nil), _wallet)
+
+	if _wallet.UUID == "" {
+		return &proto.Response{}, nil
+	}
+
+	if _wallet.Ticket == ticket {
+		return &proto.Response{Uuid: uuid, Status: _wallet.Status, Created: _wallet.Created, Updated: _wallet.Updated}, nil
+	}
 
 	_wallet.Ticket = ticket
 	_wallet.Status = status
