@@ -68,7 +68,7 @@ func (s *server) Inspire(_ context.Context, request *proto.Request) (*proto.Resp
 
 	if len(messages) > 0 {
 		for _, message := range messages {
-			setInpireDatastore(_uuid, prompt, gen_context, message, nil)
+			setInpireDatastore(_uuid, prompt, gen_context, message, "complete", nil)
 		}
 	}
 	log.Println("Inspire")
@@ -165,7 +165,7 @@ func (s *server) GenerateInspireAfterCreatedLast(_ context.Context, request *pro
 			continue
 		}
 		wg.Add(1)
-		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message, &wg)
+		go setInpireDatastore(inspire.UUID, inspire.Prompt, "auto", promptMessageMap[inspire.Prompt].Message, "pending", &wg)
 	}
 	wg.Wait()
 
@@ -329,7 +329,7 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 	return parts
 }
 
-func setInpireDatastore(_uuid, prompt, gen_context, message string, wg *sync.WaitGroup) string {
+func setInpireDatastore(_uuid, prompt, gen_context, message, status string, wg *sync.WaitGroup) string {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
@@ -339,7 +339,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message string, wg *sync.Wai
 	inspire.Context = gen_context
 	inspire.Message = message
 	inspire.Created = int64(time.Now().Unix())
-	inspire.Status = "pending"
+	inspire.Status = status
 	inspire.NameKey = uuid.New().String()
 
 	NameKey := datastore.NameKey(kind, inspire.NameKey, nil)
