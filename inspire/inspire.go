@@ -81,7 +81,7 @@ func (s *server) GetInspires(_ context.Context, request *proto.Request) (*proto.
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(1000)
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10000)
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -211,7 +211,7 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending").Limit(10)
+	query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "pending")
 	inspires := []inspire_struct.Inspire{}
 	dbClient.GetAll(context.Background(), query, &inspires)
 
@@ -256,7 +256,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "inspire")
 
-	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending").Limit(10000)
+	query := datastore.NewQuery(kind).FilterField("Status", "=", "pending")
 	inspires := []inspire_struct.Inspire{}
 
 	dbClient.GetAll(context.Background(), query, &inspires)
@@ -339,6 +339,7 @@ func setInpireDatastore(_uuid, prompt, gen_context, message, status string, wg *
 	inspire.Context = gen_context
 	inspire.Message = message
 	inspire.Created = int64(time.Now().Unix())
+	inspire.Updated = int64(time.Now().Unix())
 	inspire.Status = status
 	inspire.NameKey = uuid.New().String()
 
