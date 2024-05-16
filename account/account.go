@@ -45,6 +45,8 @@ func main() {
 func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	// Sign Up if Request uuid is empty
 	accountUUID := request.GetUuid()
+	token := request.GetToken()
+	platform := request.GetPlatform()
 
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "account")
@@ -56,6 +58,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 		dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), account)
 		return &proto.Response{Uuid: account.UUID, Status: account.Status, Created: account.Created, Updated: account.Updated}, nil
 	}
+
 	// Sign Up
 	accountUUID = uuid.New().String()
 	log.Printf("account_uuid: %s", accountUUID)
@@ -75,6 +78,51 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 		return &proto.Response{}, nil
 	}
 
+	if token == "" || platform == "" {
+		log.Printf("newAccount: %v", newAccount)
+		return &proto.Response{Uuid: newAccount.UUID, Status: newAccount.Status, Created: newAccount.Created, Updated: newAccount.Updated}, nil
+	}
+
+	kind = datastore.GetKindByPrefix(app+":"+env, "platform")
+	newPlatform := account.Platform{
+		AccountID: accountUUID,
+		Token:     token,
+		Platform:  platform,
+	}
+
+	_, err = dbClient.Put(context.Background(), datastore.IncompleteKey(kind, nil), &newPlatform)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+		return &proto.Response{}, nil
+	}
+
 	log.Printf("newAccount: %v", newAccount)
 	return &proto.Response{Uuid: newAccount.UUID, Status: newAccount.Status, Created: newAccount.Created, Updated: newAccount.Updated}, nil
+}
+
+func (s *server) Add(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	accountUUID := request.GetUuid()
+	token := request.GetToken()
+	platform := request.GetPlatform()
+
+	dbClient := datastore.GetClient(context.Background())
+	kind := datastore.GetKindByPrefix(app+":"+env, "platform")
+
+	newPlatform := account.Platform{
+		AccountID: accountUUID,
+		Token:     token,
+		Platform:  platform,
+	}
+
+	_, err := dbClient.Put(context.Background(), datastore.IncompleteKey(kind, nil), &newPlatform)
+	if err != nil {
+		log.Printf("Failed to put: %v", err)
+		return &proto.Response{}, nil
+	}
+
+	log.Printf("newPlatform: %v", newPlatform)
+
+	account := &account.Account{}
+	dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), account)
+	return &proto.Response{Uuid: account.UUID, Status: account.Status, Created: account.Created, Updated: account.Updated}, nil
 }
