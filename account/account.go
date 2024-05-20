@@ -47,9 +47,9 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	accountUUID := request.GetUuid()
 	token := request.GetToken()
 	platform := request.GetPlatform()
-
+	log.Printf("action/init/params/%s/%s/%s", platform, token, accountUUID)
 	if token == "" || platform == "" {
-		log.Printf("Failed New Account: %v", accountUUID)
+		log.Printf("error/init/params/%s/%s/%s", platform, token, accountUUID)
 		return &proto.Response{Uuid: ""}, nil
 	}
 	// 1. platform에서 조회
@@ -58,22 +58,20 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	platforms := []account.Platform{}
 
 	dbClient := datastore.GetClient(context.Background())
-	query := datastore.NewQuery(kindPlatfom).FilterField("token", "=", token).FilterField("platform", "=", platform).Limit(1)
+	query := datastore.NewQuery(kindPlatfom).FilterField("Token", "=", token).FilterField("Platform", "=", platform)
 	dbClient.GetAll(context.Background(), query, &platforms)
 
 	kindAccount := datastore.GetKindByPrefix(app+":"+env, "account")
 	if len(platforms) > 0 {
-		log.Printf("platforms: %v", platforms)
 		account := &account.Account{}
 		dbClient.Get(context.Background(), datastore.NameKey(kindAccount, platforms[0].AccountID, nil), account)
+		log.Printf("action/init/success/%s/%s/%s/%s", account.UUID, account.Status, platform, token)
 		return &proto.Response{Uuid: account.UUID, Status: account.Status, Created: account.Created, Updated: account.Updated}, nil
 	}
 
 	// 2. platform이 없으면 새로 생성
 	// 2-1. account 생성
 	accountUUID = uuid.New().String()
-	log.Printf("account_uuid: %s", accountUUID)
-
 	timestampStr := strconv.Itoa(int(time.Now().Unix()))
 
 	newAccount := account.Account{
@@ -85,7 +83,7 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 
 	_, err := dbClient.Put(context.Background(), datastore.NameKey(kindAccount, accountUUID, nil), &newAccount)
 	if err != nil {
-		log.Printf("Failed to put: %v", err)
+		log.Printf("error/init/put/%v", err)
 		return &proto.Response{}, nil
 	}
 
@@ -97,13 +95,14 @@ func (s *server) Init(_ context.Context, request *proto.Request) (*proto.Respons
 	}
 	_, err = dbClient.Put(context.Background(), datastore.IncompleteKey(kindPlatfom, nil), &newPlatform)
 	if err != nil {
-		log.Printf("Failed to put: %v", err)
+		log.Printf("error/init/put/%v", err)
 		return &proto.Response{}, nil
 	}
 	// 3. account에서 조회
-	log.Printf("account_uuid: %s", accountUUID)
 	account := &account.Account{}
 	dbClient.Get(context.Background(), datastore.NameKey(kindAccount, accountUUID, nil), account)
+	log.Printf("action/init/new/%s/%s/%s/%s", account.UUID, account.Status, platform, token)
+	log.Printf("action/init/success/%s/%s/%s/%s", account.UUID, account.Status, platform, token)
 	return &proto.Response{Uuid: account.UUID, Status: account.Status, Created: account.Created, Updated: account.Updated}, nil
 }
 

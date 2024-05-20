@@ -61,3 +61,14 @@ indexes:
     direction: asc
   - name: Created
     direction: desc
+
+# query := datastore.NewQuery(kindPlatfom).FilterField("token", "=", token).FilterField("platform", "=", platform).Limit(1)
+- kind: inspire:dev:platform
+  properties:
+  - name: token
+  - name: platform
+
+- kind: inspire:prod:platform
+  properties:
+  - name: token
+  - name: platform
