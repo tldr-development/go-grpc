@@ -41,7 +41,7 @@ func TestInit(t *testing.T) {
 	// 기존 계정 조회
 	req := &proto.Request{
 		Uuid:     "",
-		Token:    "",
+		Token:    "000166.bde014069c2b4c0994bfeeaa490cfc39.1249",
 		Platform: "apple",
 	}
 	res, err := client.Init(ctx, req)
@@ -51,5 +51,28 @@ func TestInit(t *testing.T) {
 	}
 	if res.Uuid == "" {
 		t.Fatalf("Expected uuid, got %s", res.Uuid)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to dial bufnet: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewAddServiceClient(conn)
+	req := &proto.Request{
+		Uuid:     "53954449-0089-4558-9509-c5734e4d79ba",
+		Token:    "c5c2c0f5e073e434497af469e1f3c66b9.0.srww.kDLHVRwQxg1OUEhN18-5gA",
+		Platform: "apple",
+	}
+	res, err := client.Delete(ctx, req)
+	if err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+	if res.Uuid != "" {
+		t.Fatalf("Expected empty uuid, got %s", res.Uuid)
 	}
 }
