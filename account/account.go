@@ -156,7 +156,7 @@ func (s *server) Delete(_ context.Context, request *proto.Request) (*proto.Respo
 
 	platforms := []account.Platform{}
 	query := datastore.NewQuery(kind).FilterField("AccountID", "=", accountUUID)
-	dbClient.GetAll(context.Background(), query, &platforms)
+	keys, _ := dbClient.GetAll(context.Background(), query, &platforms)
 
 	// update account status
 	kindAccount := datastore.GetKindByPrefix(app+":"+env, "account")
@@ -171,7 +171,7 @@ func (s *server) Delete(_ context.Context, request *proto.Request) (*proto.Respo
 		return &proto.Response{}, nil
 	}
 
-	dbClient.Delete(context.Background(), datastore.NameKey(kind, platforms[0].AccountID, nil))
+	dbClient.Delete(context.Background(), keys[0])
 	if platform == "apple" {
 		revokeAppleToken(token)
 	}
