@@ -164,14 +164,14 @@ func (s *server) Delete(_ context.Context, request *proto.Request) (*proto.Respo
 	dbClient.Get(context.Background(), datastore.NameKey(kindAccount, platforms[0].AccountID, nil), account)
 	account.Status = "inactive"
 	account.Updated = strconv.Itoa(int(time.Now().Unix()))
-	// dbClient.Put(context.Background(), datastore.NameKey(kindAccount, platforms[0].AccountID, nil), account)
+	dbClient.Put(context.Background(), datastore.NameKey(kindAccount, platforms[0].AccountID, nil), account)
 
 	if len(platforms) == 0 {
 		log.Printf("error/delete/notfound/%s/%s/%s", platform, token, accountUUID)
 		return &proto.Response{}, nil
 	}
 
-	// dbClient.Delete(context.Background(), datastore.NameKey(kind, platforms[0].AccountID, nil))
+	dbClient.Delete(context.Background(), datastore.NameKey(kind, platforms[0].AccountID, nil))
 	if platform == "apple" {
 		revokeAppleToken(token)
 	}
