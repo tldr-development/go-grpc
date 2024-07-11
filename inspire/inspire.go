@@ -308,10 +308,30 @@ func generateByGemini(prompt string, gen_context string) []string {
 	defer client.Close()
 
 	model := client.GenerativeModel(model)
+	// safty setting
+	model.SafetySettings = []*genai.SafetySetting{
+		{
+			Category:  genai.HarmCategoryDangerousContent,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategoryHateSpeech,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategorySexuallyExplicit,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategoryHarassment,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+	}
 	model.SetTemperature(0.9)
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt+"\n"+gen_context))
 	if err != nil {
-		log.Fatal(err)
+		log.Println("gen/error/" + prompt + "\n" + gen_context)
+		log.Println(err)
 	}
 
 	parts := printResponse(resp)
@@ -359,7 +379,7 @@ func invokeNotification(c apns_proto.AddServiceClient, inspire inspire_struct.In
 	ctx := context.Background()
 	_, err := c.SendNotification(ctx, &apns_proto.Request{Uuid: inspire.UUID, Title: "", Subtitle: "", Body: inspire.Message})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Println("error/invokeNoti/%w", err)
 	}
 	wg.Done()
 }
@@ -370,7 +390,7 @@ func decrWalletTicket(_uuid string) bool {
 	conn, err := grpc.Dial(wallet_server, grpc.WithTransportCredentials(creds))
 
 	if err != nil {
-		log.Fatalf("Failed to dial: %v", err)
+		log.Println("error/inspire/decr/wallet/ticket/%w", err)
 	}
 
 	c := wallet_proto.NewAddServiceClient(conn)
