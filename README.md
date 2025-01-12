@@ -17,8 +17,6 @@ Go과 gRPC를 GCP에서 간단하게 서비스 하기 위한 프레임워크 구
 # 자동화 Automation
 - gRPC 코드 생성
 - Container build
-- TODO : 클라우드 플랫폼으로 Container Push
-- TODO : 클라우드 플랫폼으로 서비스 Deploy
 
 ### Protoc
 ```
@@ -55,7 +53,6 @@ on:
 ```
 
 ### Service Deploy
-todo : GCP Cloudrun 환경 배포 자동화
 
 ```
 gcloud builds submit .
@@ -66,3 +63,7 @@ gcloud run ...
 ```bash
 go run sample-server/main.go
 ```
+
+## CloudRun
+<img width="313" alt="image" src="https://github.com/user-attachments/assets/5b41d9bf-1724-4142-a4f7-bface4f777b5" />
+
