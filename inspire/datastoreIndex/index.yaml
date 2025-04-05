@@ -31,8 +31,17 @@ indexes:
   - name: Status
   - name: Updated
     direction: desc
+  - name: Context
 
-# query := datastore.NewQuery(kind).FilterField("Status", "=", "complete").FilterField("Updated", "<", request.GetCreated()).DistinctOn("UUID").Limit(100)
+- kind: inspire:dev:inspire
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: Context
+
+
+# query := datastore.NewQuery(kind).FilterField("UUID", "=", _uuid).FilterField("Status", "=", "complete").Order("-Created").Limit(1)
 - kind: inspire:dev:inspire
   properties:
   - name: Status
@@ -52,3 +61,14 @@ indexes:
     direction: asc
   - name: Created
     direction: desc
+
+# query := datastore.NewQuery(kindPlatfom).FilterField("token", "=", token).FilterField("platform", "=", platform).Limit(1)
+- kind: inspire:dev:platform
+  properties:
+  - name: token
+  - name: platform
+
+- kind: inspire:prod:platform
+  properties:
+  - name: token
+  - name: platform

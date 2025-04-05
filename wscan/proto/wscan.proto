@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package wscan;
+
+option go_package = "github.com/hojin-kr/go-grpc/wscan/proto;wscan/proto";
+
+message Request {
+    string uuid = 1;
+    string image = 2;
+    string token = 3;
+}
+
+message Response {
+    string uuid = 1;
+    string result = 2;
+}
+
+service AddService {
+    rpc Wscan(Request) returns (Response);
+}

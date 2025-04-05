@@ -98,16 +98,15 @@ func (s *server) SendNotification(_ context.Context, request *proto.Request) (*p
 	subtitle := request.GetSubtitle()
 	body := request.GetBody()
 
-	if request.Token != "" {
-		notification([]string{request.Token}, title, subtitle, body)
-		return &proto.Response{Uuid: accountUUID, Token: request.Token}, nil
-	}
-
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "apns")
 
 	_apns := &Apns{}
 	dbClient.Get(context.Background(), datastore.NameKey(kind, accountUUID, nil), _apns)
+	if _apns.Token == "" {
+		log.Printf("No token")
+		return &proto.Response{}, nil
+	}
 
 	notification([]string{_apns.Token}, title, subtitle, body)
 
@@ -136,7 +135,7 @@ func notification(apnsTokens []string, title string, subtitle string, body strin
 		/* ... */
 	}
 	for i := 0; i < len(apnsTokens); i++ {
-		resp, err := c.Send(apnsTokens[i],
+		_, err := c.Send(apnsTokens[i],
 			apns.Payload{
 				APS: apns.APS{
 					Alert: apns.Alert{
@@ -154,6 +153,5 @@ func notification(apnsTokens []string, title string, subtitle string, body strin
 			print(err)
 			/* ... */
 		}
-		print(resp.Timestamp)
 	}
 }

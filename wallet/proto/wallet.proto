@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package wallet;
+
+option go_package = "github.com/hojin-kr/go-grpc/wallet/proto;wallet/proto";
+
+message Request {
+    string uuid = 1;
+    string status = 2;
+    int64 ticket = 3;
+    int64 created = 4;
+    int64 updated = 5;
+}
+
+message Response {
+    string uuid = 1;
+    string status = 2;
+    int64 ticket = 3;
+    int64 created = 4;
+    int64 updated = 5;
+}
+
+service AddService {
+    rpc Get(Request) returns (Response);
+    rpc Update(Request) returns (Response);
+    rpc Delete(Request) returns (Response);
+}
