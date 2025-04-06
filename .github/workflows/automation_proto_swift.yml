@@ -35,10 +35,8 @@ jobs:
         sudo cp .build/release/protoc-gen-swift /usr/local/bin/
         cd ..
 
-    - name: Download Swift gRPC Plugin
+    - name: MVSwift gRPC Plugin
       run: |
-        GRPC_SWIFT_VERSION=1.21.0
-        curl -L -o protoc-gen-grpc-swift https://github.com/grpc/grpc-swift/releases/download/${GRPC_SWIFT_VERSION}/protoc-gen-grpc-swift-${GRPC_SWIFT_VERSION}-ubuntu22.04
         chmod +x protoc-gen-grpc-swift
         sudo mv protoc-gen-grpc-swift /usr/local/bin/
 
