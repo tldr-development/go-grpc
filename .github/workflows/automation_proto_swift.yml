@@ -37,8 +37,8 @@ jobs:
 
     - name: Download Swift gRPC Plugin
       run: |
-        curl -L -o protoc-gen-grpc-swift https://github.com/grpc/grpc-swift/releases/latest/download/protoc-gen-grpc-swift-ubuntu22.04
-        file protoc-gen-grpc-swift
+        GRPC_SWIFT_VERSION=1.21.0
+        curl -L -o protoc-gen-grpc-swift https://github.com/grpc/grpc-swift/releases/download/${GRPC_SWIFT_VERSION}/protoc-gen-grpc-swift-${GRPC_SWIFT_VERSION}-ubuntu22.04
         chmod +x protoc-gen-grpc-swift
         sudo mv protoc-gen-grpc-swift /usr/local/bin/
 
@@ -50,7 +50,7 @@ jobs:
           --swift_out=Generated \
           --grpc-swift_out=Generated \
           $(find . -name '*.proto' \
-            ! -path "./swift-protobuf/*" )
+            ! -path "./swift-protobuf/*")
 
     - name: Commit changes
       run: |
