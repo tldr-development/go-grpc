@@ -14,17 +14,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Install Swift
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang libicu-dev
-        wget https://download.swift.org/swift-5.9-release/ubuntu2204/swift-5.9-RELEASE/swift-5.9-RELEASE-ubuntu22.04.tar.gz
-        tar -xvzf swift-5.9-RELEASE-ubuntu22.04.tar.gz
-        sudo mv swift-5.9-RELEASE-ubuntu22.04 /usr/share/swift
-        echo "PATH=/usr/share/swift/usr/bin:$PATH" >> $GITHUB_ENV
-
     - name: Install protoc
       run: |
+        sudo apt-get update
         sudo apt-get install -y protobuf-compiler
 
     - name: Install Swift Protobuf Plugin
@@ -35,20 +27,10 @@ jobs:
         sudo cp .build/release/protoc-gen-swift /usr/local/bin/
         cd ..
 
-    - name: MVSwift gRPC Plugin
-      run: |
-        chmod +x protoc-gen-grpc-swift
-        sudo mv protoc-gen-grpc-swift /usr/local/bin/
-
     - name: Generate Swift code from proto files
       run: |
         mkdir -p Generated
-        protoc \
-          --proto_path=. \
-          --swift_out=Generated \
-          --grpc-swift_out=Generated \
-          $(find . -name '*.proto' \
-            ! -path "./swift-protobuf/*")
+        find . -name '*.proto' -exec protoc --swift_out=Generated {} \;
 
     - name: Commit changes
       run: |
