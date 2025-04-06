@@ -66,7 +66,7 @@ gcloud builds submit . --tag $TAG_BASE$TARGET:$VERSION
 rm Dockerfile
 gcloud run deploy $ENV-$TARGET \
         --image=$TAG_BASE$TARGET:$VERSION \
-        --set-env-vars=ENV=$ENV,APP=inspire,PROJECT_ID=$PROJECT_ID \
+        --set-env-vars=ENV=$ENV,APP=$TARGET,PROJECT_ID=$PROJECT_ID \
         --region=asia-northeast3 \
         --project=$PROJECT_ID \
         && gcloud run services update-traffic $ENV-$TARGET --to-latest --region=asia-northeast3
