@@ -14,9 +14,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Install protoc
+    - name: Install Swift
       run: |
         sudo apt-get update
+        sudo apt-get install -y clang libicu-dev
+        wget https://download.swift.org/swift-5.9-release/ubuntu2204/swift-5.9-RELEASE/swift-5.9-RELEASE-ubuntu22.04.tar.gz
+        tar -xvzf swift-5.9-RELEASE-ubuntu22.04.tar.gz
+        sudo mv swift-5.9-RELEASE-ubuntu22.04 /usr/share/swift
+        echo "PATH=/usr/share/swift/usr/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Install protoc
+      run: |
         sudo apt-get install -y protobuf-compiler
 
     - name: Install Swift Protobuf Plugin
@@ -29,16 +37,19 @@ jobs:
 
     - name: Download Swift gRPC Plugin
       run: |
-        curl -L -o protoc-gen-grpc-swift https://github.com/grpc/grpc-swift/releases/latest/download/protoc-gen-grpc-swift-ubuntu18.04
+        curl -L -o protoc-gen-grpc-swift https://github.com/grpc/grpc-swift/releases/latest/download/protoc-gen-grpc-swift-ubuntu22.04
+        file protoc-gen-grpc-swift
         chmod +x protoc-gen-grpc-swift
         sudo mv protoc-gen-grpc-swift /usr/local/bin/
 
     - name: Generate Swift code from proto files
       run: |
         mkdir -p Generated
-        find . -name '*.proto' -exec protoc \
+        protoc \
+          --proto_path=. \
           --swift_out=Generated \
-          --grpc-swift_out=Generated {} \;
+          --grpc-swift_out=Generated \
+          $(find . -name '*.proto' ! -path "./swift-protobuf/Protos/upstream/*")
 
     - name: Commit changes
       run: |
