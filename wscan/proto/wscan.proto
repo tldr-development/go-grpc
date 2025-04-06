@@ -12,6 +12,7 @@ message Request {
     string status = 5;
     int64 created = 6;
     int64 updated = 7;
+    bytes image = 8;
 }
 
 message Response {
