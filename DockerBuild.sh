@@ -21,15 +21,21 @@ if [ -z "$APNS_URL" ]; then
   read -p "Enter APNS_URL: " APNS_URL
 fi
 
+if [ -z "$ENV" ]; then
+  read -p "Enter ENV (dev/prod): " ENV
+fi
+
 TAG_BASE=${TAG_BASE}
 VERSION=${VERSION}
 TARGET=${TARGET}
 PROJECT_ID=${PROJECT_ID}
 APNS_URL=${$APNS_URL}
+ENV=${ENV}
 
 echo "Building $TAG_BASE$TARGET:$VERSION"
 echo "Project ID: $PROJECT_ID"
 echo "APNS URL: $APNS_URL"
+echo "Environment: $ENV"
 
 # confirm 
 echo "Confirming build for $TAG_BASE$TARGET:$VERSION"
