@@ -14,6 +14,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: TODO
+    - name: Install protoc
       run: |
-        echo "TODO: Implement proto generation for Swift"
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+
+    - name: Install Swift Protobuf Plugin
+      run: |
+        git clone https://github.com/apple/swift-protobuf.git
+        cd swift-protobuf
+        swift build -c release
+        sudo cp .build/release/protoc-gen-swift /usr/local/bin/
+        cd ..
+
+    - name: Generate Swift code from proto files
+      run: |
+        mkdir -p Generated
+        find . -name '*.proto' -exec protoc --swift_out=Generated {} \;
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add Generated
+        git commit -m "Auto-generate Swift code from proto files" || echo "No changes to commit"
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        branch: ${{ github.ref }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
