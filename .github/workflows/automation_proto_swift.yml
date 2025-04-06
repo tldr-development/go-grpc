@@ -50,7 +50,7 @@ jobs:
           --swift_out=Generated \
           --grpc-swift_out=Generated \
           $(find . -name '*.proto' \
-            ! -path "./swift-protobuf/*" \
+            ! -path "./swift-protobuf/*" )
 
     - name: Commit changes
       run: |
