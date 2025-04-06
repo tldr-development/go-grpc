@@ -27,10 +27,20 @@ jobs:
         sudo cp .build/release/protoc-gen-swift /usr/local/bin/
         cd ..
 
+    - name: Install Swift gRPC Plugin
+      run: |
+        git clone https://github.com/grpc/grpc-swift.git
+        cd grpc-swift
+        make plugins
+        sudo cp protoc-gen-grpc-swift /usr/local/bin/
+        cd ..
+
     - name: Generate Swift code from proto files
       run: |
         mkdir -p Generated
-        find . -name '*.proto' -exec protoc --swift_out=Generated {} \;
+        find . -name '*.proto' -exec protoc \
+          --swift_out=Generated \
+          --grpc-swift_out=Generated {} \;
 
     - name: Commit changes
       run: |
