@@ -31,8 +31,8 @@ jobs:
       run: |
         git clone https://github.com/grpc/grpc-swift.git
         cd grpc-swift
-        make plugins
-        sudo cp protoc-gen-grpc-swift /usr/local/bin/
+        swift build -c release
+        sudo cp .build/release/protoc-gen-grpc-swift /usr/local/bin/
         cd ..
 
     - name: Generate Swift code from proto files
