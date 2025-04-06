@@ -30,7 +30,7 @@ var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
 
 const location = "us-central1"
-const model = "gemini-1.0-pro-001"
+const model = "gemini-2.0-flash-001"
 
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
@@ -39,6 +39,18 @@ func main() {
 	}
 	if env != "live" {
 		log.Printf("Run server")
+	}
+
+	// if not set env, app, projectID
+	if env == "" {
+		panic("ENV is not set")
+	}
+	// panic if app is not set
+	if app == "" {
+		panic("APP is not set")
+	}
+	if projectID == "" {
+		panic("PROJECT_ID is not set")
 	}
 
 	srv := grpc.NewServer()
@@ -51,13 +63,37 @@ func main() {
 }
 
 func (s *server) Wscan(_ context.Context, request *proto.Request) (*proto.Response, error) {
-	prompt := request.GetPrompt()
-	gen_context := request.GetContext()
-	_uuid := request.GetUuid()
+	log.Printf("request: %v", request)
+	uuid := uuid.New().String()
+	imageBytes := request.GetImage()
 
-	generateByGemini(prompt, gen_context, _uuid)
+	prompt := `
+	system:
+	Optimized Luggage Analysis Prompt
+	Analyze the given image of an open suitcase and provide a structured breakdown of its contents and estimated weight. Follow these steps:
+	Identify and List Objects
+	Recognize and list all visible objects inside the suitcase.
+	Be as specific as possible (e.g., jeans, striped t-shirt, headphones, passport, wallet with cash, camera).
+	Estimate the Weight of Each Object
+	Provide an estimated weight (in g) for each object based on typical values.
+	Example: Headphones: 300g, Camera: 600g.
+	Consider Additional Hidden Items
+	Assume that extra clothing or smaller objects may be present in unseen parts of the suitcase.
+	Estimate a reasonable additional weight based on suitcase size and object distribution.
+	Example: Additional clothing in unseen areas: +1000g.
+	Include the Suitcases Own Weight
+	Consider the weight of the suitcase based on its type:
+	Carry-on: ~3000-4000g
+	Medium-sized checked luggage: ~4000-5000g
+	Large suitcase: ~5000-6000g
+	Calculate the Total Estimated Weight
+	Sum the weights of visible items, estimated hidden items, and the suitcase itself.
+	Example: Total estimated weight: 10000g.
+	`
 
-	return &proto.Response{}, nil
+	messages := generateByGemini(prompt, request.GetContext(), imageBytes)
+
+	return &proto.Response{Uuid: uuid, Prompt: prompt, Message: messages[0], Created: int64(time.Now().Unix()), Updated: int64(time.Now().Unix())}, nil
 }
 
 // 내 wscan 목록을 조회
@@ -103,7 +139,7 @@ func (s *server) GenerateWscanAfterCreatedLast(_ context.Context, request *proto
 	dbClient.GetAll(context.Background(), query, &wscans)
 
 	for _, wscan := range wscans {
-		go generateByGemini(wscan.Prompt, wscan.Context, wscan.UUID)
+		go generateByGemini(wscan.Prompt, wscan.Context, nil)
 		log.Println("wscan: ", wscan)
 	}
 
@@ -226,7 +262,7 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 	return &proto.Response{}, nil
 }
 
-func generateByGemini(prompt, gen_context, _uuid string) []string {
+func generateByGemini(prompt string, gen_context string, imageBytes []byte) []string {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
@@ -235,20 +271,51 @@ func generateByGemini(prompt, gen_context, _uuid string) []string {
 	defer client.Close()
 
 	model := client.GenerativeModel(model)
+	// safety setting
+	model.SafetySettings = []*genai.SafetySetting{
+		{
+			Category:  genai.HarmCategoryDangerousContent,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategoryHateSpeech,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategorySexuallyExplicit,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+		{
+			Category:  genai.HarmCategoryHarassment,
+			Threshold: genai.HarmBlockOnlyHigh,
+		},
+	}
 	model.SetTemperature(0.9)
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt+"\n"+gen_context))
+
+	// 멀티모달 입력 구성
+	parts := []genai.Part{
+		genai.Text(prompt + "\n" + gen_context),
+	}
+	if imageBytes != nil {
+		parts = append(parts, genai.Blob{
+			MIMEType: "image/jpeg",
+			Data:     imageBytes,
+		})
+	}
+
+	resp, err := model.GenerateContent(ctx, parts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	parts := printResponse(resp)
-
-	// set last wscan
-	for _, part := range parts {
-		fmt.Println(part + "\n")
-		setInpireDatastore(_uuid, prompt, gen_context, part)
+	if err != nil {
+		log.Println("gen/error/" + prompt + "\n" + gen_context)
+		log.Println(err)
 	}
-	return parts
+
+	partsRet := printResponse(resp)
+	log.Println("generateByGemini")
+	return partsRet
 }
 
 func printResponse(resp *genai.GenerateContentResponse) []string {
@@ -261,7 +328,7 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 	return parts
 }
 
-func setInpireDatastore(_uuid, prompt, gen_context, message string) string {
+func setWscanDatastore(_uuid, prompt, gen_context, message string) string {
 	dbClient := datastore.GetClient(context.Background())
 	kind := datastore.GetKindByPrefix(app+":"+env, "wscan")
 

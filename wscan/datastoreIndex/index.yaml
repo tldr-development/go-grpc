@@ -1,0 +1,74 @@
+indexes:
+# indexing
+# gcloud datastore indexes cleanup
+# gcloud datastore indexes create
+# gcloud datastore indexes describe
+# gcloud datastore indexes list
+# query := datastore.NewQuery(kind).FilterField("UUID", "=", request.GetUuid()).FilterField("Status", "=", "complete").Order("-Created").Limit(10)
+- kind: wscan:dev:wscan
+  properties:
+  - name: UUID
+  - name: Status
+  - name: Createds
+    direction: desc
+
+- kind: wscan:prod:wscan
+  properties:
+  - name: UUID
+  - name: Status
+  - name: Created
+    direction: desc
+
+
+- kind: wscan:dev:wscan
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+
+- kind: wscan:prod:wscan
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: Context
+
+- kind: wscan:dev:wscan
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: Context
+
+
+# query := datastore.NewQuery(kind).FilterField("UUID", "=", _uuid).FilterField("Status", "=", "complete").Order("-Created").Limit(1)
+- kind: wscan:dev:wscan
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: UUID
+    direction: asc
+  - name: Created
+    direction: desc
+
+- kind: wscan:prod:wscan
+  properties:
+  - name: Status
+  - name: Updated
+    direction: desc
+  - name: UUID
+    direction: asc
+  - name: Created
+    direction: desc
+
+# query := datastore.NewQuery(kindPlatfom).FilterField("token", "=", token).FilterField("platform", "=", platform).Limit(1)
+- kind: wscan:dev:platform
+  properties:
+  - name: token
+  - name: platform
+
+- kind: wscan:prod:platform
+  properties:
+  - name: token
+  - name: platform
