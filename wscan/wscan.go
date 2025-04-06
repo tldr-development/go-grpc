@@ -68,7 +68,7 @@ func (s *server) Wscan(_ context.Context, request *proto.Request) (*proto.Respon
 	imageBytes := request.GetImage()
 
 	prompt := `
-	system:
+	*system:
 	Optimized Luggage Analysis Prompt
 	Analyze the given image of an open suitcase and provide a structured breakdown of its contents and estimated weight. Follow these steps:
 	Identify and List Objects
@@ -89,6 +89,31 @@ func (s *server) Wscan(_ context.Context, request *proto.Request) (*proto.Respon
 	Calculate the Total Estimated Weight
 	Sum the weights of visible items, estimated hidden items, and the suitcase itself.
 	Example: Total estimated weight: 10000g.
+
+	*response format:
+	json
+	{
+		"type": "OBJECT",
+		"properties": {
+		"items_weight": {
+			"type": "ARRAY",
+			"items": {
+			"type": "OBJECT",
+			"properties": {
+				"name": { "type": "STRING" },
+				"weight": { "type": "INTEGER" }
+			},
+			"required": ["name", "weight"]
+			}
+		},
+		"suitcase_weight": {
+			"type": "INTEGER"
+		},
+		"hidden_items_weight": {
+			"type": "INTEGER"
+		}
+		}
+	}
 	`
 
 	messages := generateByGemini(prompt, request.GetContext(), imageBytes)
