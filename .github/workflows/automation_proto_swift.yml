@@ -31,7 +31,7 @@ jobs:
       run: |
         git clone https://github.com/grpc/grpc-swift.git
         cd grpc-swift
-        swift build -c release
+        swift build -c release --product protoc-gen-grpc-swift
         sudo cp .build/release/protoc-gen-grpc-swift /usr/local/bin/
         cd ..
 
