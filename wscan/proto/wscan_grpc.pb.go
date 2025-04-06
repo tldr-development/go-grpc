@@ -19,6 +19,13 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AddServiceClient interface {
 	Wscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GetWscans(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Responses, error)
+	UpdateWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GetLastWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	DeleteWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	GenerateWscanAfterCreatedLast(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	SendNotification(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
 
 type addServiceClient struct {
@@ -38,11 +45,81 @@ func (c *addServiceClient) Wscan(ctx context.Context, in *Request, opts ...grpc.
 	return out, nil
 }
 
+func (c *addServiceClient) SendNotifications(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/SendNotifications", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) GetWscans(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Responses, error) {
+	out := new(Responses)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/GetWscans", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) UpdateWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/UpdateWscan", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) GetLastWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/GetLastWscan", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) DeleteWscan(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/DeleteWscan", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) GenerateWscanAfterCreatedLast(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/GenerateWscanAfterCreatedLast", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *addServiceClient) SendNotification(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	out := new(Response)
+	err := c.cc.Invoke(ctx, "/wscan.AddService/SendNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AddServiceServer is the server API for AddService service.
 // All implementations must embed UnimplementedAddServiceServer
 // for forward compatibility
 type AddServiceServer interface {
 	Wscan(context.Context, *Request) (*Response, error)
+	SendNotifications(context.Context, *Request) (*Response, error)
+	GetWscans(context.Context, *Request) (*Responses, error)
+	UpdateWscan(context.Context, *Request) (*Response, error)
+	GetLastWscan(context.Context, *Request) (*Response, error)
+	DeleteWscan(context.Context, *Request) (*Response, error)
+	GenerateWscanAfterCreatedLast(context.Context, *Request) (*Response, error)
+	SendNotification(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedAddServiceServer()
 }
 
@@ -52,6 +129,27 @@ type UnimplementedAddServiceServer struct {
 
 func (UnimplementedAddServiceServer) Wscan(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Wscan not implemented")
+}
+func (UnimplementedAddServiceServer) SendNotifications(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendNotifications not implemented")
+}
+func (UnimplementedAddServiceServer) GetWscans(context.Context, *Request) (*Responses, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWscans not implemented")
+}
+func (UnimplementedAddServiceServer) UpdateWscan(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWscan not implemented")
+}
+func (UnimplementedAddServiceServer) GetLastWscan(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastWscan not implemented")
+}
+func (UnimplementedAddServiceServer) DeleteWscan(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteWscan not implemented")
+}
+func (UnimplementedAddServiceServer) GenerateWscanAfterCreatedLast(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateWscanAfterCreatedLast not implemented")
+}
+func (UnimplementedAddServiceServer) SendNotification(context.Context, *Request) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendNotification not implemented")
 }
 func (UnimplementedAddServiceServer) mustEmbedUnimplementedAddServiceServer() {}
 
@@ -84,6 +182,132 @@ func _AddService_Wscan_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AddService_SendNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).SendNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/SendNotifications",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).SendNotifications(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_GetWscans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GetWscans(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/GetWscans",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GetWscans(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_UpdateWscan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).UpdateWscan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/UpdateWscan",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).UpdateWscan(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_GetLastWscan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GetLastWscan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/GetLastWscan",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GetLastWscan(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_DeleteWscan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).DeleteWscan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/DeleteWscan",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).DeleteWscan(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_GenerateWscanAfterCreatedLast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).GenerateWscanAfterCreatedLast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/GenerateWscanAfterCreatedLast",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).GenerateWscanAfterCreatedLast(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AddService_SendNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AddServiceServer).SendNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/wscan.AddService/SendNotification",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AddServiceServer).SendNotification(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AddService_ServiceDesc is the grpc.ServiceDesc for AddService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +318,34 @@ var AddService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Wscan",
 			Handler:    _AddService_Wscan_Handler,
+		},
+		{
+			MethodName: "SendNotifications",
+			Handler:    _AddService_SendNotifications_Handler,
+		},
+		{
+			MethodName: "GetWscans",
+			Handler:    _AddService_GetWscans_Handler,
+		},
+		{
+			MethodName: "UpdateWscan",
+			Handler:    _AddService_UpdateWscan_Handler,
+		},
+		{
+			MethodName: "GetLastWscan",
+			Handler:    _AddService_GetLastWscan_Handler,
+		},
+		{
+			MethodName: "DeleteWscan",
+			Handler:    _AddService_DeleteWscan_Handler,
+		},
+		{
+			MethodName: "GenerateWscanAfterCreatedLast",
+			Handler:    _AddService_GenerateWscanAfterCreatedLast_Handler,
+		},
+		{
+			MethodName: "SendNotification",
+			Handler:    _AddService_SendNotification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
