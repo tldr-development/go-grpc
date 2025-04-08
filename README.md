@@ -66,3 +66,6 @@ gcloud run ...
 ```bash
 go run sample-server/main.go
 ```
+
+
+protoc version is 1.20.0 fix
