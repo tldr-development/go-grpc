@@ -33,7 +33,7 @@ var apns_server = os.Getenv("APNS_SERVER")
 var wallet_server = os.Getenv("WALLET_SERVER")
 
 const location = "us-central1"
-const model = "gemini-1.0-pro-001"
+const model = "gemini-2.0-flash-001"
 
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
