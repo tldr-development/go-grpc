@@ -32,9 +32,16 @@ var env = os.Getenv("ENV")
 var app = os.Getenv("APP")
 var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
+var wscan_model = os.Getenv("WSCAN_MODEL")
 
 const location = "us-central1"
-const modelName = "gemini-2.0-flash-001"
+
+var modelName = func() string {
+	if wscan_model != "" {
+		return wscan_model
+	}
+	return "gemini-2.0-flash-001"
+}()
 
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
@@ -72,53 +79,53 @@ func (s *server) Wscan(_ context.Context, request *proto.Request) (*proto.Respon
 	imageBytes := request.GetImage()
 
 	prompt := `
-	*system:
-	Optimized Luggage Analysis Prompt
-	Analyze the given image of an open suitcase and provide a structured breakdown of its contents and estimated weight. Follow these steps:
-	Identify and List Objects
-	Recognize and list all visible objects inside the suitcase.
-	Be as specific as possible (e.g., jeans, striped t-shirt, headphones, passport, wallet with cash, camera).
-	Estimate the Weight of Each Object
-	Provide an estimated weight (in g) for each object based on typical values.
-	Example: Headphones: 300g, Camera: 600g.
-	Consider Additional Hidden Items
-	Assume that extra clothing or smaller objects may be present in unseen parts of the suitcase.
-	Estimate a reasonable additional weight based on suitcase size and object distribution.
-	Example: Additional clothing in unseen areas: +1000g.
-	Include the Suitcases Own Weight
-	Consider the weight of the suitcase based on its type:
-	Carry-on: ~3000-4000g
-	Medium-sized checked luggage: ~4000-5000g
-	Large suitcase: ~5000-6000g
-	Calculate the Total Estimated Weight
-	Sum the weights of visible items, estimated hidden items, and the suitcase itself.
-	Example: Total estimated weight: 10000g.
+    *system:
+    Advanced Luggage Weight Estimation
+    Your task is to analyze the provided image and estimate weights in grams with high accuracy and robustness.
 
-	*response format:
-	json
-	{
-		"type": "OBJECT",
-		"properties": {
-		"items_weight": {
-			"type": "ARRAY",
-			"items": {
-			"type": "OBJECT",
-			"properties": {
-				"name": { "type": "STRING" },
-				"weight": { "type": "INTEGER" }
-			},
-			"required": ["name", "weight"]
-			}
-		},
-		"suitcase_weight": {
-			"type": "INTEGER"
-		},
-		"hidden_items_weight": {
-			"type": "INTEGER"
-		}
-		}
-	}
-	`
+    1) Determine Scenario First (Branching)
+    - If an open SUITCASE/BAG (hard suitcase, soft suitcase, duffel, backpack) is visible (look for wheels/handle/zippers/interior lining/compartments):
+      a) Identify the container type and approximate size:
+         - Carry-on suitcase: ~3000–4000g
+         - Medium checked suitcase: ~4000–5000g
+         - Large checked suitcase: ~5000–6000g
+         - Duffel/soft bag/backpack: ~800–2500g depending on build/size
+      b) List ALL visible items inside/on top of the container as specific objects. Estimate each item’s weight in grams using typical values.
+      c) Estimate HIDDEN ITEMS likely present but occluded (e.g., clothes beneath layers, small accessories). Guideline by fill-level:
+         - Low fill: +0–500g
+         - Medium fill: +500–1500g
+         - High fill: +1500–3000g
+         Adjust by item density (e.g., heavy fabrics vs. thin shirts).
+      d) Set suitcase_weight to the container’s own weight estimate. Set hidden_items_weight per (c).
+
+    - If NO suitcase/bag is confidently detected or the image is a general/untidy scene:
+      a) Only list visible objects and estimate their weights.
+      b) Set suitcase_weight = 0 and hidden_items_weight = 0.
+
+    2) Object Identification and Weighting Rules
+    - Be specific: "jeans", "striped t‑shirt", "headphones", "DSLR camera", "toiletry pouch", etc.
+    - Typical quick references (approx):
+      t‑shirt 120–200g, shirt 200–300g, jeans 500–800g, shorts 200–400g,
+      hoodie 500–800g, sweater 400–700g, underwear 50–100g, socks 30–80g,
+      sneakers (pair) 600–1200g, sandals (pair) 200–500g,
+      headphones 200–400g, DSLR camera 500–1200g, tablet 300–600g,
+      laptop 1000–2200g, power adapter 150–300g, book 200–500g,
+      water bottle (empty) 50–150g, toiletry pouch 200–600g (if closed, treat as one item).
+    - Avoid double counting: if a pouch/bag is closed, estimate it as one item; do not also list its internal items.
+    - Round to integer grams (nearest ~10–50g is fine), but return as integers.
+
+    3) Output Contract (STRICT)
+    - Return ONLY JSON with the following schema. No prose, no markdown, no code fences.
+    {
+      "items_weight": [
+        { "name": "string", "weight": 0 }
+      ],
+      "suitcase_weight": 0,
+      "hidden_items_weight": 0
+    }
+    - When suitcase/bag present: set suitcase_weight and hidden_items_weight as above.
+    - When not present: suitcase_weight = 0, hidden_items_weight = 0.
+    - Ensure field names and types match exactly.`
 
 	messages := generateByGemini(prompt, request.GetContext(), imageBytes)
 
