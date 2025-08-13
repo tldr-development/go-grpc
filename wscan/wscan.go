@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,7 +34,7 @@ var projectID = os.Getenv("PROJECT_ID")
 var apns_server = os.Getenv("APNS_SERVER")
 
 const location = "us-central1"
-const model = "gemini-2.0-flash-001"
+const modelName = "gemini-2.0-flash-001"
 
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
@@ -58,7 +62,7 @@ func main() {
 	reflection.Register(srv)
 
 	if e := srv.Serve(lis); e != nil {
-		panic(err)
+		panic(e)
 	}
 }
 
@@ -118,7 +122,31 @@ func (s *server) Wscan(_ context.Context, request *proto.Request) (*proto.Respon
 
 	messages := generateByGemini(prompt, request.GetContext(), imageBytes)
 
-	return &proto.Response{Uuid: uuid, Prompt: prompt, Message: messages[0], Created: int64(time.Now().Unix()), Updated: int64(time.Now().Unix())}, nil
+	normalized := ""
+	if len(messages) > 0 {
+		if s, ok := ensureWscanJSON(messages[0]); ok {
+			normalized = s
+		} else {
+			// last attempt: re-ask strictly for JSON only
+			strictPrompt := prompt + "\nReturn only JSON matching exactly the schema above. No code fences. No markdown. No explanations."
+			mm := generateByGemini(strictPrompt, request.GetContext(), imageBytes)
+			if len(mm) > 0 {
+				if s2, ok2 := ensureWscanJSON(mm[0]); ok2 {
+					normalized = s2
+				}
+			}
+		}
+	}
+
+	// fallback minimal empty structure if still empty
+	if normalized == "" {
+		normalized = `{"items_weight":[],"suitcase_weight":0,"hidden_items_weight":0}`
+	}
+
+	// persist as pending for downstream notification pipeline
+	_ = setWscanDatastore(uuid, prompt, request.GetContext(), normalized)
+
+	return &proto.Response{Uuid: uuid, Prompt: prompt, Message: normalized, Created: int64(time.Now().Unix()), Updated: int64(time.Now().Unix())}, nil
 }
 
 // 내 wscan 목록을 조회
@@ -288,57 +316,68 @@ func (s *server) SendNotifications(_ context.Context, request *proto.Request) (*
 }
 
 func generateByGemini(prompt string, gen_context string, imageBytes []byte) []string {
-	ctx := context.Background()
+	// context with timeout for robustness
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	client, err := genai.NewClient(ctx, projectID, location)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("gen/client/error:", err)
+		return []string{}
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel(model)
-	// safety setting
-	model.SafetySettings = []*genai.SafetySetting{
-		{
-			Category:  genai.HarmCategoryDangerousContent,
-			Threshold: genai.HarmBlockOnlyHigh,
-		},
-		{
-			Category:  genai.HarmCategoryHateSpeech,
-			Threshold: genai.HarmBlockOnlyHigh,
-		},
-		{
-			Category:  genai.HarmCategorySexuallyExplicit,
-			Threshold: genai.HarmBlockOnlyHigh,
-		},
-		{
-			Category:  genai.HarmCategoryHarassment,
-			Threshold: genai.HarmBlockOnlyHigh,
-		},
+	gm := client.GenerativeModel(modelName)
+	// safety setting (block high-risk only)
+	gm.SafetySettings = []*genai.SafetySetting{
+		{Category: genai.HarmCategoryDangerousContent, Threshold: genai.HarmBlockOnlyHigh},
+		{Category: genai.HarmCategoryHateSpeech, Threshold: genai.HarmBlockOnlyHigh},
+		{Category: genai.HarmCategorySexuallyExplicit, Threshold: genai.HarmBlockOnlyHigh},
+		{Category: genai.HarmCategoryHarassment, Threshold: genai.HarmBlockOnlyHigh},
 	}
-	model.SetTemperature(0.9)
+	// lower temperature for determinism
+	gm.SetTemperature(0.2)
 
 	// 멀티모달 입력 구성
 	parts := []genai.Part{
 		genai.Text(prompt + "\n" + gen_context),
 	}
 	if imageBytes != nil {
-		parts = append(parts, genai.Blob{
-			MIMEType: "image/jpeg",
-			Data:     imageBytes,
-		})
+		parts = append(parts, genai.Blob{MIMEType: "image/jpeg", Data: imageBytes})
 	}
 
-	resp, err := model.GenerateContent(ctx, parts...)
-	if err != nil {
-		log.Fatal(err)
+	// basic retry with backoff
+	var resp *genai.GenerateContentResponse
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		resp, lastErr = gm.GenerateContent(ctx, parts...)
+		if lastErr == nil {
+			break
+		}
+		// if blocked or context deadline, do not spam
+		var be *genai.BlockedError
+		if errors.As(lastErr, &be) {
+			log.Println("gen/blocked:", be.Error())
+			break
+		}
+		if errors.Is(lastErr, context.DeadlineExceeded) || errors.Is(lastErr, context.Canceled) {
+			log.Println("gen/timeout:", lastErr)
+			break
+		}
+		time.Sleep(time.Duration(300*(attempt+1)) * time.Millisecond)
 	}
-
-	if err != nil {
-		log.Println("gen/error/" + prompt + "\n" + gen_context)
-		log.Println(err)
+	if lastErr != nil {
+		log.Println("gen/error:", lastErr)
+		return []string{}
 	}
 
 	partsRet := printResponse(resp)
+	// try to extract normalized JSON from candidates
+	for _, p := range partsRet {
+		if s, ok := ensureWscanJSON(p); ok {
+			return []string{s}
+		}
+	}
 	log.Println("generateByGemini")
 	return partsRet
 }
@@ -351,6 +390,89 @@ func printResponse(resp *genai.GenerateContentResponse) []string {
 		}
 	}
 	return parts
+}
+
+// ensureWscanJSON tries to extract a JSON object from the given text and
+// validate it against the expected wscan schema. Returns normalized (minified)
+// JSON string and true when valid, or "", false when invalid.
+func ensureWscanJSON(text string) (string, bool) {
+	raw := extractFirstJSONObject(text)
+	if raw == "" {
+		return "", false
+	}
+	// validate shape by unmarshaling into strict struct
+	type itemWeight struct {
+		Name   string `json:"name"`
+		Weight int    `json:"weight"`
+	}
+	type wscanShape struct {
+		ItemsWeight       []itemWeight `json:"items_weight"`
+		SuitcaseWeight    int          `json:"suitcase_weight"`
+		HiddenItemsWeight int          `json:"hidden_items_weight"`
+	}
+	var v wscanShape
+	if err := json.Unmarshal([]byte(raw), &v); err != nil {
+		return "", false
+	}
+	// basic required checks
+	if v.ItemsWeight == nil {
+		v.ItemsWeight = []itemWeight{}
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", false
+	}
+	return string(b), true
+}
+
+// extractFirstJSONObject finds the first top-level JSON object in text.
+func extractFirstJSONObject(s string) string {
+	// quick path: if text already looks like a JSON object without fences
+	trimmed := strings.TrimSpace(s)
+	if strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}") {
+		return trimmed
+	}
+	// remove common Markdown code fences
+	fenceRe := regexp.MustCompile("(?s)```(?:json)?\\s*(\\{.*?\\})\\s*```")
+	if m := fenceRe.FindStringSubmatch(s); len(m) == 2 {
+		return strings.TrimSpace(m[1])
+	}
+	// fallback: scan for first '{' and find matching closing '}'
+	i := strings.Index(s, "{")
+	if i == -1 {
+		return ""
+	}
+	depth := 0
+	inStr := false
+	esc := false
+	for j := i; j < len(s); j++ {
+		c := s[j]
+		if inStr {
+			if esc {
+				esc = false
+				continue
+			}
+			if c == '\\' {
+				esc = true
+			} else if c == '"' {
+				inStr = false
+			}
+			continue
+		}
+		if c == '"' {
+			inStr = true
+			continue
+		}
+		if c == '{' {
+			depth++
+		} else if c == '}' {
+			depth--
+			if depth == 0 {
+				return strings.TrimSpace(s[i : j+1])
+			}
+		}
+	}
+	return ""
 }
 
 func setWscanDatastore(_uuid, prompt, gen_context, message string) string {
